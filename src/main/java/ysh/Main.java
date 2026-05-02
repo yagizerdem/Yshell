@@ -14,7 +14,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         String code = """
-                exec("git", "help");
+                execRaw("git help");
                 """;
 
         Lexer lexer = new Lexer(Preprocess.removeComments(Preprocess.mergeContinuation(code)));
@@ -40,6 +40,7 @@ public class Main {
         Register.nativeFunction(interpreter, new Run());
         Register.nativeFunction(interpreter, new Globber());
         Register.nativeFunction(interpreter, new Exec());
+        Register.nativeFunction(interpreter, new ExecRaw());
 
         interpreter.interpret(program.program);
 
