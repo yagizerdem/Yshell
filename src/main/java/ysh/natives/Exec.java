@@ -28,16 +28,14 @@ public class Exec extends Function.NativeFunction  implements Callable {
                 throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1 , "at least 1 argument is required to run exec");
             }
 
-            AtomicInteger i = new AtomicInteger(2);
-            String arg = String.join(",",
-                    arguments.stream().skip(1).map(x -> {
-                        return requireString(x, getFnName(), i.getAndIncrement());
-                    }).toList());
-
-            String exeName = requireString(arguments.getFirst(), getFnName(), 1);
+            AtomicInteger i = new AtomicInteger(1);
+            List<String> args = arguments
+                    .stream().
+                    map(x -> requireString(x, getFnName(), i.getAndIncrement()))
+                    .toList();
 
             ProcessBuilder pb =
-                    new ProcessBuilder(exeName, arg);
+                    new ProcessBuilder(args);
 
             Process p = pb.start();
 
