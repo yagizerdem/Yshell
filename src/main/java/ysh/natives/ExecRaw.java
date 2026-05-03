@@ -33,13 +33,8 @@ public class ExecRaw extends Function.NativeFunction  implements Callable {
                 throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1 , "at least 1 argument is required to run execRaw");
             }
 
-            String exeName = args.getFirst();
-            AtomicInteger i = new AtomicInteger(2);
-            String argMerged = String.join(",",
-                    args.stream().skip(1).toList());
-
             ProcessBuilder pb =
-                    new ProcessBuilder(exeName, argMerged);
+                    new ProcessBuilder(args);
 
             Process p = pb.start();
 
