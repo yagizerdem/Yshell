@@ -38,7 +38,6 @@ public class Main {
         Interpreter interpreter = new Interpreter();
 
         Register.nativeFunction(interpreter, new Run());
-        Register.nativeFunction(interpreter, new Globber());
         Register.nativeFunction(interpreter, new Exec());
         Register.nativeFunction(interpreter, new ExecRaw());
         Register.nativeFunction(interpreter, new Pipe());
