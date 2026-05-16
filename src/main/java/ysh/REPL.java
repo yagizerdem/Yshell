@@ -13,9 +13,7 @@ public class REPL {
 
     public static void start() throws Exception {
         String code = """
-                   var list = glob("**/*.ysh");
-                   println list.size();
-                   println list.toString();
+                   println cwd();
                 """;
 
         Lexer lexer = new Lexer(Preprocess.removeComments(Preprocess.mergeContinuation(code)));
@@ -43,6 +41,9 @@ public class REPL {
         Register.nativeFunction(interpreter, new ExecRaw());
         Register.nativeFunction(interpreter, new Pipe());
         Register.nativeFunction(interpreter, new Glob());
+        Register.nativeFunction(interpreter, new Cwd());
+        Register.nativeFunction(interpreter, new Home());
+        Register.nativeFunction(interpreter, new Chdir());
 
         interpreter.interpret(program.program);
 

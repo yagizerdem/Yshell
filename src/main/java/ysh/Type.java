@@ -6,13 +6,8 @@ public class Type {
 
 
     static public abstract class Line<T> {
-        public int lineNo;
 
         public Line() {}
-
-        public Line(int lineNo) {
-            this.lineNo = lineNo;
-        }
 
         public abstract T execute();
 
