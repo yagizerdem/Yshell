@@ -14,6 +14,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     implementation(fileTree(mapOf("dir" to "lib", "include" to listOf("*.jar"))))
     implementation("com.hrakaroo:glob:0.9.0")
+    implementation("org.apache.hadoop:hadoop-common:3.5.0")
 }
 
 tasks.test {
