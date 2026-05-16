@@ -1,5 +1,7 @@
 package ysh.natives;
 
+import ysh.CommandExecutor;
+import ysh.Type;
 import ysharp.treewalk.YsharpException;
 import ysharp.treewalk.evaluator.Callable;
 import ysharp.treewalk.evaluator.Function;
@@ -23,38 +25,25 @@ public class Exec extends Function.NativeFunction  implements Callable {
                                  List<Variable.Variant> arguments)
             throws YsharpException {
 
-        try {
-            if(arguments.isEmpty()) {
-                throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1 , "at least 1 argument is required to run exec");
-            }
-
-            AtomicInteger i = new AtomicInteger(1);
-            List<String> args = arguments
-                    .stream().
-                    map(x -> requireString(x, getFnName(), i.getAndIncrement()))
-                    .toList();
-
-            ProcessBuilder pb =
-                    new ProcessBuilder(args);
-
-            Process p = pb.start();
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
-            }
-
-            p.waitFor();
-
-            return new Variable.Variant(null);
-        }catch (IOException ex) {
-            throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1, ex.getMessage());
+        if(arguments.isEmpty()) {
+            throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1 , "at least 1 argument is required to run exec");
         }
-        catch (InterruptedException ex) {
-            throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1, ex.getMessage());
-        }
+
+        AtomicInteger i = new AtomicInteger(1);
+        List<String> parts = arguments
+                .stream().
+                map(x -> requireString(x, getFnName(), i.getAndIncrement()))
+                .toList();
+
+        Type.Command shellCommand = new Type.Command();
+        shellCommand.args = parts.stream().skip(1).toList();
+        shellCommand.exeName = parts.getFirst();
+        // do not expand since this is native function, expansion only works in shell parser
+
+        shellCommand.execute(new CommandExecutor());
+
+        return new Variable.Variant(null);
+
     }
 
     @Override

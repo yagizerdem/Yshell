@@ -13,7 +13,7 @@ public class REPL {
 
     public static void start() throws Exception {
         String code = """
-                   println cwd();
+                   execRaw("ping google.com");
                 """;
 
         Lexer lexer = new Lexer(Preprocess.removeComments(Preprocess.mergeContinuation(code)));
