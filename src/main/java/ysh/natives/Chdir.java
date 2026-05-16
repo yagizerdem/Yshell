@@ -1,5 +1,6 @@
 package ysh.natives;
 
+import ysh.Context;
 import ysharp.treewalk.YsharpException;
 import ysharp.treewalk.evaluator.Function;
 import ysharp.treewalk.evaluator.Interpreter;
@@ -50,7 +51,10 @@ public class Chdir extends Function.NativeFunction {
             );
         }
 
+        // update cwd on both process and context level
         System.setProperty("user.dir", target.toString());
+        Context context = Context.getContext();
+        context.cwd = Path.of(target.toString());
 
         return new Variable.Variant(target.toString());
     }

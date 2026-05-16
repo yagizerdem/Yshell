@@ -1,5 +1,6 @@
 package ysh.natives;
 
+import ysh.Context;
 import ysharp.treewalk.YsharpException;
 import ysharp.treewalk.evaluator.*;
 
@@ -18,7 +19,8 @@ public class Cwd  extends Function.NativeFunction  implements Callable {
             throws YsharpException {
 
         requireArity(arguments, arity(), getFnName());
-        String cwd =  System.getProperty("user.dir");
+        Context context = Context.getContext();
+        String cwd =  context.cwd.toString();
 
         return new Variable.Variant(new yString.yStringInstance(cwd));
     }
