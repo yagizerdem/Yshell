@@ -1,7 +1,6 @@
 package ysh;
 
 import ysh.natives.*;
-import ysharp.treewalk.evaluator.Interpreter;
 import ysharp.treewalk.lexer.Lexer;
 import ysharp.treewalk.lexer.Preprocess;
 import ysharp.treewalk.lexer.Token;
@@ -34,21 +33,21 @@ public class REPL {
             });
         }
 
-        Interpreter interpreter = new Interpreter();
+        Context context = Context.getContext();
 
-        Register.nativeFunction(interpreter, new Run());
-        Register.nativeFunction(interpreter, new Exec());
-        Register.nativeFunction(interpreter, new ExecRaw());
-        Register.nativeFunction(interpreter, new Pipe());
-        Register.nativeFunction(interpreter, new Glob());
-        Register.nativeFunction(interpreter, new Cwd());
-        Register.nativeFunction(interpreter, new Home());
-        Register.nativeFunction(interpreter, new Chdir());
+        Register.nativeFunction(context.interpreter, new Run());
+        Register.nativeFunction(context.interpreter, new Exec());
+        Register.nativeFunction(context.interpreter, new ExecRaw());
+        Register.nativeFunction(context.interpreter, new Pipe());
+        Register.nativeFunction(context.interpreter, new Glob());
+        Register.nativeFunction(context.interpreter, new Cwd());
+        Register.nativeFunction(context.interpreter, new Home());
+        Register.nativeFunction(context.interpreter, new Chdir());
 
-        interpreter.interpret(program.program);
+        context.interpreter.interpret(program.program);
 
-        if(interpreter.hadErrors()) {
-            interpreter.errors.forEach(x -> {
+        if(context.interpreter.hadErrors()) {
+            context.interpreter.errors.forEach(x -> {
                 System.out.println(x.getMessage());
             });
         }

@@ -34,9 +34,8 @@ public class CommandExecutor {
     }
 
     public void ExecutePipe(Type.Pipe pipe)  throws YsharpException {
+
         try{
-
-
             List<Thread> threads = new ArrayList<>();
             List<Process> processes = new ArrayList<>();
 
