@@ -11,12 +11,8 @@ public class CommandExecutor {
 
     public void ExecuteCommand(Type.Command command) throws YsharpException {
         try {
-            List<String> commandParts = new ArrayList<>();
-            commandParts.add(command.exeName);
-            commandParts.addAll(command.args);
-
             ProcessBuilder pb =
-                    new ProcessBuilder(commandParts);
+                    new ProcessBuilder(command.args);
 
             Process p = pb.start();
 
@@ -41,12 +37,9 @@ public class CommandExecutor {
 
             for (int i = 0; i < pipe.commands.size(); i++) {
                 Type.Command shellCommand = pipe.commands.get(i);
-                List<String> commandParts = new ArrayList<>();
-                commandParts.add(shellCommand.exeName);
-                commandParts.addAll(shellCommand.args);
 
                 ProcessBuilder pb =
-                        new ProcessBuilder(commandParts);
+                        new ProcessBuilder(shellCommand.args);
 
                 processes.add(pb.
                         redirectOutput(ProcessBuilder.Redirect.PIPE)
@@ -105,4 +98,7 @@ public class CommandExecutor {
         }
     }
 
+    public void ExecuteChainCommand(Type.ChainCommand chainCommand) throws YsharpException {
+
+    }
 }

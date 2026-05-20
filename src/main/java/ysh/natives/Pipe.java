@@ -45,8 +45,7 @@ public class Pipe extends Function.NativeFunction  implements Callable  {
             }
 
             Type.Command shellCommand = new Type.Command();
-            shellCommand.args = parts.stream().skip(1).toList();
-            shellCommand.exeName = parts.getFirst();
+            shellCommand.args = parts.stream().toList();
             shellCommand.rawCommand = rawCommand;
 
             pipe.commands.add(shellCommand);

@@ -6,25 +6,28 @@ import java.util.List;
 
 public class Type {
 
-
-    static public abstract class Line {
-
-        public Line() {}
-
-        public abstract void execute(CommandExecutor executor);
-
+    public interface Line {
+        void execute(CommandExecutor executor);
     }
 
-    static public class Command extends Line {
+    static public class Command implements Line {
         public String rawCommand;
         public String expandedCommand;
-        public String exeName;
-        public List<String> args;
+        public List<String> args; // first one is exe name or built in , other params should be command line arguments
+        public boolean isBuiltIn;
 
-        public Command() {}
+        public Command() {
+            this.isBuiltIn = false;
+        }
 
         public Command(String rawCommand) {
             this.rawCommand = rawCommand;
+            this.isBuiltIn = false;
+        }
+
+        public Command(String rawCommand, boolean isBuiltIn) {
+            this.rawCommand = rawCommand;
+            this.isBuiltIn = isBuiltIn;
         }
 
         public Command(String rawCommand, String expandedCommand) {
@@ -38,7 +41,7 @@ public class Type {
         }
     }
 
-    static public class Pipe extends Line {
+    static public class Pipe implements Line {
         public List<Command> commands;
 
         public Pipe() {}
@@ -53,4 +56,26 @@ public class Type {
         }
     }
 
+    static public class ChainCommand implements Line {
+        public final Command command;
+        public final Token operator;
+
+        public ChainCommand(Command command, Token operator) {
+            this.command =command;
+            this.operator = operator;
+        }
+
+        @Override
+        public void execute(CommandExecutor executor) throws YsharpException {
+            executor.ExecuteChainCommand(this);
+        }
+    }
+
+    public static enum TokenType {
+
+    }
+
+    static public class Token {
+
+    }
 }
