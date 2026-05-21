@@ -71,11 +71,44 @@ public class Type {
         }
     }
 
-    public static enum TokenType {
+    static public char EOF = '\0';
 
+    public static enum TokenType {
+        ESCAPE, // ^
+        AND_CONDITIONAL, // &&
+        OR_CONDITIONAL, // ||
+        PIPE, // |
+        AND_SEPARATOR, // &
+        UNQUOTED_WORD,
+        SINGLE_QUOTED_WORD,
+        DOUBLE_QUOTED_WORD,
+        COMMAND_SUBSTITUTION_WORD,
+        EXPANSION_WORD,
+        SEMI_COLON, // ;
+
+        REDIRECT_OUT,          // >
+        REDIRECT_OUT_APPEND,   // >>
+        REDIRECT_IN,           // <
+        REDIRECT_STDERR,          // 2>
+        REDIRECT_STDERR_APPEND,   // 2>>
+        REDIRECT_STDOUT,       // 1>
+        REDIRECT_STDOUT_APPEND,// 1>>
+
+        REDIRECT_STDERR_TO_STDOUT,   // 2>&1
+        REDIRECT_STDOUT_TO_STDERR,   // 1>&2
+
+        NEWLINE, // \n
+        EOF
     }
 
     static public class Token {
+        public final String lexeme;
+        public final TokenType type;
 
+        public Token(String lexeme, TokenType type) {
+            this.lexeme = lexeme;
+            this.type = type;
+        }
     }
+
 }

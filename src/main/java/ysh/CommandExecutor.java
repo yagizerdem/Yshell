@@ -24,7 +24,9 @@ public class CommandExecutor {
             }
 
             p.waitFor();
+            Context.getContext().setExitStatus(p.exitValue());
         }catch (Exception ex) {
+            Context.getContext().setExitStatus(1);
             throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1 ,ex.getMessage());
         }
     }
@@ -81,8 +83,10 @@ public class CommandExecutor {
                         System.out.println(lineToPipe);
                     }
 
-                } catch (IOException e) {
-
+                    last.waitFor();
+                    Context.getContext().setExitStatus(last.exitValue());
+                } catch (Exception e) {
+                    Context.getContext().setExitStatus(1);
                 }
             }));
 

@@ -20,7 +20,8 @@ stream_redirection_operator ::=  "2>&1" | "1>&2"
 
 word ::= word_part+
 
-word_part ::= quoted
+word_part ::= double_quoted
+| single_quoted
 | unquoted
 | expansion
 | substitution
@@ -30,6 +31,13 @@ expansion ::= ("\$"char(char | digit)*) |
 ("\${"char(char | digit)\*)"}" |
 "%" alfa-numeric "%" |
 "\$" special_parameter
+
+double_quoted ::= '"' double_part* '"'
+
+double_part ::= double_text
+| expansion
+| command_substitution
+| escaped_char
 
 substitution ::= "$\`" list  "`" 
 

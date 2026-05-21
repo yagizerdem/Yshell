@@ -15,11 +15,14 @@ public class Context {
 
     public Interpreter interpreter;
 
+    public int exitStatus;
+
 
     private Context() {
         this.env = new Environment();
         this.interpreter = new Interpreter();
         this.cwd = Path.of(System.getProperty("user.dir"));
+        this.exitStatus = 0;
     }
 
     public static Context getContext() {
@@ -29,6 +32,9 @@ public class Context {
         return Context.instance;
     }
 
+    public void setExitStatus(int existStatus) {
+        this.exitStatus = existStatus;
+    }
     public static class Environment {
         HashMap<String, String> variables = new HashMap<>();
 
