@@ -9,10 +9,11 @@ import java.util.List;
 
 public class CommandExecutor {
 
-    public void ExecuteCommand(Type.Command command) throws YsharpException {
+    public void ExecuteCommand(Type.Command command) {
         try {
             ProcessBuilder pb =
                     new ProcessBuilder(command.args);
+            pb.redirectErrorStream(true); // transfer stderr to stdout
 
             Process p = pb.start();
 
@@ -27,11 +28,11 @@ public class CommandExecutor {
             Context.getContext().setExitStatus(p.exitValue());
         }catch (Exception ex) {
             Context.getContext().setExitStatus(1);
-            throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1 ,ex.getMessage());
+            System.out.println(ex.getMessage());
         }
     }
 
-    public void ExecutePipe(Type.Pipe pipe)  throws YsharpException {
+    public void ExecutePipe(Type.Pipe pipe) {
 
         try{
             List<Thread> threads = new ArrayList<>();
@@ -42,6 +43,7 @@ public class CommandExecutor {
 
                 ProcessBuilder pb =
                         new ProcessBuilder(shellCommand.args);
+                pb.redirectErrorStream(true);
 
                 processes.add(pb.
                         redirectOutput(ProcessBuilder.Redirect.PIPE)
@@ -98,11 +100,22 @@ public class CommandExecutor {
                 th.join();
             }
         }catch (Exception ex) {
-            throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1, ex.getMessage());
+            Context.getContext().setExitStatus(1);
+            System.out.println(ex.getMessage());
         }
     }
 
     public void ExecuteChainCommand(Type.ChainCommand chainCommand) throws YsharpException {
-
+        ExecuteCommand(chainCommand.command);
+        int exitStatus = Context.getContext().exitStatus;
+        if(chainCommand.chainCommand == null) {
+            return;
+        }
+        if(exitStatus == 0 && chainCommand.operator.type == Type.TokenType.AND_CONDITIONAL) {
+            ExecuteChainCommand(chainCommand.chainCommand);
+        }
+        if(exitStatus != 0 && chainCommand.operator.type == Type.TokenType.OR_CONDITIONAL) {
+            ExecuteChainCommand(chainCommand.chainCommand);
+        }
     }
 }

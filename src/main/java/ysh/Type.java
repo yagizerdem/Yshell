@@ -2,6 +2,7 @@ package ysh;
 
 import ysharp.treewalk.YsharpException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Type {
@@ -13,7 +14,7 @@ public class Type {
     static public class Command implements Line {
         public String rawCommand;
         public String expandedCommand;
-        public List<String> args; // first one is exe name or built in , other params should be command line arguments
+        public List<String> args = new ArrayList<>(); // first one is exe name or built in , other params should be command line arguments
         public boolean isBuiltIn;
 
         public Command() {
@@ -42,7 +43,7 @@ public class Type {
     }
 
     static public class Pipe implements Line {
-        public List<Command> commands;
+        public List<Command> commands = new ArrayList<>();
 
         public Pipe() {}
 
@@ -60,9 +61,18 @@ public class Type {
         public final Command command;
         public final Token operator;
 
+        public final ChainCommand chainCommand;
+
+        public ChainCommand(Command command, Token operator, ChainCommand chainCommand) {
+            this.command =command;
+            this.operator = operator;
+            this.chainCommand = chainCommand;
+        }
+
         public ChainCommand(Command command, Token operator) {
             this.command =command;
             this.operator = operator;
+            this.chainCommand = null;
         }
 
         @Override
