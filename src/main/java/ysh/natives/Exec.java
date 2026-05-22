@@ -36,8 +36,7 @@ public class Exec extends Function.NativeFunction  implements Callable {
                 .toList();
 
         Type.Command shellCommand = new Type.Command();
-        shellCommand.args = parts.stream().skip(1).toList();
-        shellCommand.exeName = parts.getFirst();
+        shellCommand.args = parts.stream().toList();
         // do not expand since this is native function, expansion only works in shell parser
 
         shellCommand.execute(new CommandExecutor());
