@@ -26,17 +26,16 @@ word_part ::= double_quoted
 | expansion
 | substitution
 
-expansion ::= ("\$"char(char | digit)*) | 
-"\$"digit | 
-("\${"char(char | digit)\*)"}" |
-"%" alfa-numeric "%" |
+expansion ::= "\$"identifier | 
+("\${" identifier "}" |
+"%" identifier "%" |
 "\$" special_parameter
 
 double_quoted ::= '"' double_part* '"'
 
 double_part ::= double_text
 | expansion
-| command_substitution
+| substitution
 | escaped_char
 
 substitution ::= "$\`" list  "`" 
@@ -48,3 +47,4 @@ alfa-numeric ::= (char | digit)+
 special_parameter ::= "?" | "@" | "*" | "$" | "#"
 
 escape ::= "^"
+identifier ::= ( \[a-zA-Z_]\[a-zA-Z0-9_]* ) | \[0-9]+

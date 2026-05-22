@@ -10,16 +10,15 @@ public class Main {
 
         Type.Command cmd1 = new Type.Command();
         cmd1.isBuiltIn = true;
-        cmd1.args.addAll(List.of("exit", "0"));
+        cmd1.args.addAll(List.of("set", "name=yagiz erdem"));
 
         CommandExecutor executor = new CommandExecutor();
 
 
         executor.ExecuteCommand(cmd1);
 
-        while (true) {
-            System.out.println("hit");
-        }
+        Context context = Context.getContext();
+        System.out.println(context.env.getVariableOrDefault("name"));
 
     }
 }
