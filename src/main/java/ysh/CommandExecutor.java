@@ -138,6 +138,10 @@ public class CommandExecutor {
                 ExecuteEcho(command);
                 break;
             }
+            case "exit" : {
+                ExecuteExit(command);
+                break;
+            }
         }
     }
 
@@ -246,4 +250,29 @@ public class CommandExecutor {
         }
     }
 
+    public void ExecuteExit(Type.Command command) {
+        try {
+            if(command.args.size() > 2) {
+                System.out.println("exit args should max size 2");
+                return;
+            }
+
+            int exitStatus = 0;
+            if(command.args.size() == 2) {
+               String status = command.args.get(1);
+               try {
+                   exitStatus = Integer.parseInt(status);
+               } catch (NumberFormatException ex) {
+                   Context.getContext().setExitStatus(1);
+                   System.out.println("exit: numeric argument required: " + status);
+                   return;
+               }
+            }
+            System.exit(exitStatus);
+        }
+        catch (Exception ex) {
+            Context.getContext().setExitStatus(1);
+            System.err.println(ex.getMessage());
+        }
+    }
 }
