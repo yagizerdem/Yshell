@@ -12,7 +12,8 @@ public class REPL {
 
     public static void start() throws Exception {
         String code = """
-                   execRaw("ping google.com");
+                   var files = glob("**/*.ysh");
+                   println files.toString();
                 """;
 
         Lexer lexer = new Lexer(Preprocess.removeComments(Preprocess.mergeContinuation(code)));
@@ -43,6 +44,7 @@ public class REPL {
         Register.nativeFunction(context.interpreter, new Cwd());
         Register.nativeFunction(context.interpreter, new Home());
         Register.nativeFunction(context.interpreter, new Chdir());
+        Register.nativeFunction(context.interpreter, new GetExitStatusFn());
 
         context.interpreter.interpret(program.program);
 

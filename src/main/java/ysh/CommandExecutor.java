@@ -4,12 +4,20 @@ package ysh;
 import ysharp.treewalk.YsharpException;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CommandExecutor {
 
     public void ExecuteCommand(Type.Command command) {
+        if(command.isBuiltIn) {
+            ExecuteBuiltIn(command);
+            return;
+        }
+
         try {
             ProcessBuilder pb =
                     new ProcessBuilder(command.args);
@@ -118,4 +126,124 @@ public class CommandExecutor {
             ExecuteChainCommand(chainCommand.chainCommand);
         }
     }
+
+    public void ExecuteBuiltIn(Type.Command command) {
+        // command dispatcher util
+        switch (command.args.getFirst()) {
+            case "cd" : {
+                ExecuteCd(command);
+                break;
+            }
+            case "echo" : {
+                ExecuteEcho(command);
+                break;
+            }
+        }
+    }
+
+    public void ExecuteCd(Type.Command command) {
+
+        try {
+            if(command.args.size() != 2) {
+                System.out.println("cd args should max size 2");
+                return;
+            }
+
+            String dest = command.args.get(1);
+            Context context = Context.getContext();
+
+            if(dest.equals(".")) {
+                return;
+            }
+
+            if(dest.equals("..")) {
+                Path parent = context.cwd.getParent();
+
+                if (parent == null) {
+                    return;
+                }
+
+                if (!Files.exists(parent)) {
+                    throw new YsharpException(
+                            YsharpException.YsharpErrorType.PROCESS,
+                            -1,
+                            "cd: no such file or directory: " + dest
+                    );
+                }
+
+                if (!Files.isDirectory(parent)) {
+                    throw new YsharpException(
+                            YsharpException.YsharpErrorType.PROCESS,
+                            -1,
+                            "cd: not a directory: " + dest
+                    );
+                }
+
+                context.cwd = parent;
+                System.setProperty("user.dir", context.cwd.toString());
+                return;
+            }
+
+            Path currentPath = context.cwd;
+
+            Path newPath = Paths.get(dest);
+            if (!newPath.isAbsolute()) {
+                newPath = currentPath.resolve(dest);
+            }
+
+            newPath = newPath.normalize();
+
+            if (!Files.exists(newPath)) {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "cd: no such file or directory: " + dest
+                );
+            }
+
+            if (!Files.isDirectory(newPath)) {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "cd: not a directory: " + dest
+                );
+            }
+
+            context.cwd = newPath;
+            System.setProperty("user.dir", newPath.toString());
+
+            Context.getContext().setExitStatus(0);
+        }catch (Exception ex) {
+            Context.getContext().setExitStatus(1);
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public void ExecuteEcho(Type.Command command) {
+        try {
+            if (command.args.size() == 1) {
+                System.out.println();
+                Context.getContext().setExitStatus(0);
+                return;
+            }
+
+            StringBuilder builder = new StringBuilder();
+
+            for (int i = 1; i < command.args.size(); i++) {
+                if (i > 1) {
+                    builder.append(" ");
+                }
+
+                builder.append(command.args.get(i));
+            }
+
+            System.out.println(builder.toString());
+            Context.getContext().setExitStatus(0);
+
+        } catch (Exception ex) {
+            Context.getContext().setExitStatus(1);
+            System.err.println(ex.getMessage());
+        }
+    }
+
 }
