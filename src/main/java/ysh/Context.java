@@ -36,9 +36,32 @@ public class Context {
         this.exitStatus = existStatus;
     }
     public static class Environment {
-        HashMap<String, String> variables = new HashMap<>();
+        private HashMap<String, String> variables = new HashMap<>();
 
         public  Environment() {}
+
+        public void setVariable(String identifier, String value) {
+            variables.put(identifier, value);
+        }
+
+        public void setVariableIfNotExists(String identifier, String value) {
+            if (variables.containsKey(identifier)) {
+                throw new RuntimeException(
+                        "Variable already exists: " + identifier
+                );
+            }
+            variables.put(identifier, value);
+        }
+
+        public String getVariableOrDefault(String identifier) {
+            if(variables.containsKey(identifier)) return variables.get(identifier);
+            return null;
+        }
+
+        public String getVariableOrDefault(String identifier, String defaultVal) {
+            if(variables.containsKey(identifier)) return variables.get(identifier);
+            return defaultVal;
+        }
     }
 
 }

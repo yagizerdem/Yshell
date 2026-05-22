@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class CommandExecutor {
 
@@ -130,12 +131,30 @@ public class CommandExecutor {
     public void ExecuteBuiltIn(Type.Command command) {
         // command dispatcher util
         switch (command.args.getFirst()) {
-            case "cd" : {
+            case "cd" :
+            case "chdir" : {
                 ExecuteCd(command);
                 break;
             }
             case "echo" : {
                 ExecuteEcho(command);
+                break;
+            }
+            case "exit" : {
+                ExecuteExit(command);
+                break;
+            }
+            case "dir":
+            case "ls": {
+                ExecuteDir(command);
+                break;
+            }
+            case "set": {
+                ExecuteSet(command);
+                break;
+            }
+            case "mkdir" : {
+                ExecuteMkdir(command);
                 break;
             }
         }
@@ -246,4 +265,235 @@ public class CommandExecutor {
         }
     }
 
+    public void ExecuteExit(Type.Command command) {
+        try {
+            if(command.args.size() > 2) {
+                System.out.println("exit args should max size 2");
+                return;
+            }
+
+            int exitStatus = 0;
+            if(command.args.size() == 2) {
+               String status = command.args.get(1);
+               try {
+                   exitStatus = Integer.parseInt(status);
+               } catch (NumberFormatException ex) {
+                   Context.getContext().setExitStatus(1);
+                   System.out.println("exit: numeric argument required: " + status);
+                   return;
+               }
+            }
+            System.exit(exitStatus);
+        }
+        catch (Exception ex) {
+            Context.getContext().setExitStatus(1);
+            System.err.println(ex.getMessage());
+        }
+    }
+
+    public void ExecuteDir(Type.Command command) {
+        try {
+
+            Context context = Context.getContext();
+
+            if(command.args.size() == 1) {
+                File file = new File(context.cwd.toString());
+                String[] entities = file.list();
+                for(String entity : entities) {
+                    System.out.println(entity);
+                }
+                return;
+            }
+
+            for(int i = 1; i < command.args.size(); i++) {
+                String part = command.args.get(i);
+                Path newPath = Paths.get(part);
+
+                if(!newPath.isAbsolute()) {
+                    newPath = context.cwd.resolve(newPath);
+                }
+
+                newPath = newPath.normalize();
+
+                if(Files.isDirectory(newPath)) {
+                    File file = new File(newPath.toString());
+                    String[] entities = file.list();
+                    for(String entity : entities) {
+                        System.out.println(entity);
+                    }
+                }
+                else {
+                    System.out.println(newPath);
+                }
+            }
+        }
+        catch (Exception ex) {
+            Context.getContext().setExitStatus(1);
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public void ExecuteSet(Type.Command command) {
+        Context context = Context.getContext();
+
+        try {
+            if (command.args.size() != 2) {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "set: expected exactly one assignment in the form name=value"
+                );
+            }
+
+            String assignment = command.args.get(1);
+            Cursor cur = new Cursor(assignment);
+
+            StringBuilder identifierPart = new StringBuilder();
+            StringBuilder valuePart = new StringBuilder();
+
+            if (cur.isEnd()) {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "set: assignment cannot be empty"
+                );
+            }
+
+            if (cur.peek() == '=') {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "set: missing variable name before '='"
+                );
+            }
+
+            char first = cur.peek();
+
+            if (!cur.isAlphaOrUnderscore(first)) {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "set: invalid variable name: variable name must start with a letter or '_'"
+                );
+            }
+
+            while (!cur.isEnd()) {
+                char c = cur.peek();
+
+                if (c == '=') {
+                    cur.advance();
+                    break;
+                }
+
+                if (!cur.isAlphaNumericOrUnderscore(c)) {
+                    throw new YsharpException(
+                            YsharpException.YsharpErrorType.PROCESS,
+                            -1,
+                            "set: invalid variable name: character '" + c + "' is not allowed"
+                    );
+                }
+
+                identifierPart.append(cur.advance());
+            }
+
+            if (identifierPart.length() == 0) {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "set: variable name cannot be empty"
+                );
+            }
+
+            if (cur.prev() != '=') {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "set: missing '=' in assignment"
+                );
+            }
+
+            while (!cur.isEnd()) {
+                valuePart.append(cur.advance());
+            }
+
+            context.env.setVariable(
+                    identifierPart.toString(),
+                    valuePart.toString()
+            );
+
+            context.setExitStatus(0);
+
+        } catch (Exception ex) {
+            context.setExitStatus(1);
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public void ExecuteMkdir(Type.Command command) {
+        Context context = Context.getContext();
+
+        try {
+            if (command.args.size() < 2) {
+                throw new YsharpException(
+                        YsharpException.YsharpErrorType.PROCESS,
+                        -1,
+                        "mkdir: missing operand"
+                );
+            }
+
+            for (int i = 1; i < command.args.size(); i++) {
+                String part = command.args.get(i);
+
+                if (part == null || part.isBlank()) {
+                    throw new YsharpException(
+                            YsharpException.YsharpErrorType.PROCESS,
+                            -1,
+                            "mkdir: invalid empty directory name"
+                    );
+                }
+
+                Path newPath = Paths.get(part);
+
+                if (!newPath.isAbsolute()) {
+                    newPath = context.cwd.resolve(newPath);
+                }
+
+                newPath = newPath.normalize();
+
+                if (Files.exists(newPath)) {
+                    throw new YsharpException(
+                            YsharpException.YsharpErrorType.PROCESS,
+                            -1,
+                            "mkdir: cannot create directory '" + part + "': file exists"
+                    );
+                }
+
+                Path parent = newPath.getParent();
+
+                if (parent != null && !Files.exists(parent)) {
+                    throw new YsharpException(
+                            YsharpException.YsharpErrorType.PROCESS,
+                            -1,
+                            "mkdir: cannot create directory '" + part + "': parent directory does not exist"
+                    );
+                }
+
+                if (parent != null && !Files.isDirectory(parent)) {
+                    throw new YsharpException(
+                            YsharpException.YsharpErrorType.PROCESS,
+                            -1,
+                            "mkdir: cannot create directory '" + part + "': parent is not a directory"
+                    );
+                }
+
+                Files.createDirectory(newPath);
+            }
+
+            context.setExitStatus(0);
+
+        } catch (Exception ex) {
+            context.setExitStatus(1);
+            System.out.println(ex.getMessage());
+        }
+    }
 }
