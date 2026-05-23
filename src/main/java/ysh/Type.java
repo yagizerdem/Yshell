@@ -118,6 +118,9 @@ public class Type {
         LEFT_CURLY_BRACE,  // {
         RIGHT_CURLY_BRACE, // }
 
+        WORD_BREAK,
+
+        TILDE, // ~
         EOF
 
     }

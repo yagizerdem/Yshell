@@ -56,6 +56,16 @@ public class Scanner {
                 collectWord();
                 break;
             }
+            case '~': {
+                if (!isEscaped) {
+                    addToken(Type.TokenType.TILDE);
+                    isEscaped = false;
+                    break;
+                }
+                isEscaped = false;
+                collectWord();
+                break;
+            }
             case '$': {
                 if (!isEscaped) {
                     addToken(Type.TokenType.DOLLAR);
@@ -285,9 +295,18 @@ public class Scanner {
                 break;
             }
             default: {
-                if(isBlank(c)) {
+                if (isBlank(c)) {
                     isEscaped = false;
-                    break; // consume blank
+
+                    while (!cursor.isEnd() && isBlank(cursor.peek())) {
+                        cursor.advance();
+                    }
+
+                    if (!tokens.isEmpty() && tokens.get(tokens.size() - 1).type != Type.TokenType.WORD_BREAK) {
+                        tokens.add(new Type.Token(" ", Type.TokenType.WORD_BREAK));
+                    }
+
+                    break;
                 }
                 if(c == '\n') {
                     isEscaped = false;
@@ -395,17 +414,39 @@ public class Scanner {
         this.tokens.add(new Type.Token(word.toString(), Type.TokenType.TEXT));
     }
     public void collectBackTick() {
+        int nestedCommandCounter = 0;
         StringBuilder word = new StringBuilder();
-
         boolean hasClosed = false;
 
         while (!cursor.isEnd()) {
             char c = cursor.peek();
 
             if (c == '`' && !isEscaped) {
-                hasClosed = true;
+                if(nestedCommandCounter == 0) {
+                    hasClosed = true;
+                    cursor.advance();
+                    break;
+                }
+                else {
+                    cursor.advance();
+                    word.append("`");
+                    nestedCommandCounter--;
+                    continue;
+                }
+            }
+
+            if (c == '$' && !isEscaped) {
                 cursor.advance();
-                break;
+                word.append("$");
+
+                if (!cursor.isEnd() && cursor.peek() == '`') {
+                    cursor.advance();
+                    word.append("`");
+                    nestedCommandCounter++;
+                }
+
+                isEscaped = false;
+                continue;
             }
 
             if (c == '^') {
@@ -415,10 +456,12 @@ public class Scanner {
                 } else {
                     isEscaped = true;
                 }
-            } else {
-                word.append(c);
-                isEscaped = false;
+                cursor.advance();
+                continue;
             }
+
+            word.append(c);
+            isEscaped = false;
 
             cursor.advance();
         }
@@ -477,7 +520,6 @@ public class Scanner {
                 Type.TokenType type = switch (cursor.peek()) {
                     case '{' -> Type.TokenType.LEFT_CURLY_BRACE;
                     case '}' -> Type.TokenType.RIGHT_CURLY_BRACE;
-                    case '%' -> Type.TokenType.PERCENT;
                     case '`' -> Type.TokenType.BACKTICK;
                     default -> null;
                 };
@@ -527,32 +569,47 @@ public class Scanner {
                         tokens.add(new Type.Token(String.valueOf("}"), Type.TokenType.RIGHT_CURLY_BRACE));
 
                     }
-                    else if (c == '%') {
-                        while (!cursor.isEnd() && cursor.peek() != '%') {
-                            lexeme.append(cursor.advance());
-                        }
-
-                        if (!lexeme.isEmpty()) {
-                            tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
-                            lexeme.setLength(0);
-                        }
-
-                        char closing = cursor.advance();
-                        if(closing != '%') {
-                            throw new YsharpException(
-                                    YsharpException.YsharpErrorType.PROCESS,
-                                    -1,
-                                    "Unclosed percent");
-                        }
-                        tokens.add(new Type.Token(String.valueOf("%"), Type.TokenType.PERCENT));
-
-                    }
 
                     isEscaped = false;
                     continue;
                 }
 
                 isEscaped = false;
+                continue;
+            }
+
+            if(c == '%' && !isEscaped) {
+                while (!cursor.isEnd() && cursor.peek() != '%') {
+                    lexeme.append(cursor.advance());
+                }
+
+                if (!lexeme.isEmpty()) {
+                    tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
+                    lexeme.setLength(0);
+                }
+
+                char closing = cursor.advance();
+                if(closing != '%') {
+                    throw new YsharpException(
+                            YsharpException.YsharpErrorType.PROCESS,
+                            -1,
+                            "Unclosed percent");
+                }
+                tokens.add(new Type.Token(String.valueOf("%"), Type.TokenType.PERCENT));
+
+                isEscaped = false;
+                continue;
+            }
+
+            if (c == '~') {
+                if (this.isEscaped) {
+                    lexeme.append(c);
+                } else {
+                    tokens.add(new Type.Token("~", Type.TokenType.TILDE));
+                }
+
+                isEscaped = false;
+                cursor.advance();
                 continue;
             }
 

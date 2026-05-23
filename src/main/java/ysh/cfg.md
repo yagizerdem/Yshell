@@ -28,10 +28,13 @@ word ::= word_part+
 word_part ::= double_quoted
 | single_quoted
 | unquoted
-| expansion
+| variable_expansion
 | substitution
+| tilde_expansion
 
-expansion ::= "\$"identifier | 
+tilde_expansion ::= "~" | "~" identifier
+
+variable_expansion ::= "\$"identifier | 
 ("\${" identifier "}" |
 "%" identifier "%" |
 "\$" special_parameter
@@ -43,7 +46,7 @@ unquoted ::= any char
 single_quoted ::= '\'' (any char)* '\''
 
 double_part ::= double_text
-| expansion
+| variable_expansion
 | substitution
 
 substitution ::= "$\`" list  "`" 
