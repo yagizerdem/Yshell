@@ -1,15 +1,20 @@
 
 # grammar
 
-list ::= conditional ( (";" | "&" | "\n") conditional)*
+list ::= newline* conditional ( separator conditional)* separator? newline*
+
+separator ::= ";" | "&" | newline+
+newline ::= "\n"
 
 conditional ::= pipeline ( ("&&" | "||" ) pipeline)*
 
 pipeline ::= command ("|" command)*
 
-command ::= simple_command | compound_command | function_definition
+command ::= simple_command | grouped_command
 
-simple_command ::= word  (word | redirection)* 
+simple_command ::= word (word | redirection)*
+
+grouped_command  ::= "(" list ")"  redirection*
 
 redirection   ::= (file_redirection_operator filename) | stream_redirection_operator
 
@@ -33,10 +38,13 @@ expansion ::= "\$"identifier |
 
 double_quoted ::= '"' double_part* '"'
 
+unquoted ::= any char
+
+single_quoted ::= '\'' (any char)* '\''
+
 double_part ::= double_text
 | expansion
 | substitution
-| escaped_char
 
 substitution ::= "$\`" list  "`" 
 
@@ -48,3 +56,4 @@ special_parameter ::= "?" | "@" | "*" | "$" | "#"
 
 escape ::= "^"
 identifier ::= ( \[a-zA-Z_]\[a-zA-Z0-9_]* ) | \[0-9]+
+filename ::= word
