@@ -84,17 +84,18 @@ public class Type {
     static public char EOF = '\0';
 
     public static enum TokenType {
-        ESCAPE, // ^
+        CARET, // ^
         AND_CONDITIONAL, // &&
         OR_CONDITIONAL, // ||
         PIPE, // |
         AND_SEPARATOR, // &
-        UNQUOTED_WORD,
-        SINGLE_QUOTED_WORD,
-        DOUBLE_QUOTED_WORD,
-        COMMAND_SUBSTITUTION_WORD,
-        EXPANSION_WORD,
+        DOUBLE_QUOTE,
+        SINGLE_QUOTE,
+        BACKTICK,
         SEMI_COLON, // ;
+        DOLLAR, // $
+
+        PERCENT, // %
 
         REDIRECT_OUT,          // >
         REDIRECT_OUT_APPEND,   // >>
@@ -107,8 +108,21 @@ public class Type {
         REDIRECT_STDERR_TO_STDOUT,   // 2>&1
         REDIRECT_STDOUT_TO_STDERR,   // 1>&2
 
+        TEXT,
+
         NEWLINE, // \n
+
+        LEFT_PAREN, // (
+        RIGHT_PAREN, // )
+
+        LEFT_CURLY_BRACE,  // {
+        RIGHT_CURLY_BRACE, // }
+
+        WORD_BREAK,
+
+        TILDE, // ~
         EOF
+
     }
 
     static public class Token {

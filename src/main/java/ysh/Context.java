@@ -17,7 +17,6 @@ public class Context {
 
     public int exitStatus;
 
-
     private Context() {
         this.env = new Environment();
         this.interpreter = new Interpreter();
