@@ -500,14 +500,14 @@ class ScannerTest {
         assertEquals(" ", scanner.tokens.get(6).lexeme);
         assertEquals(Type.TokenType.TEXT, scanner.tokens.get(6).type);
 
-        assertEquals("`", scanner.tokens.get(7).lexeme);
-        assertEquals(Type.TokenType.BACKTICK, scanner.tokens.get(7).type);
+        assertEquals("`cat", scanner.tokens.get(7).lexeme);
+        assertEquals(Type.TokenType.TEXT, scanner.tokens.get(7).type);
 
-        assertEquals("cat test2.txt", scanner.tokens.get(8).lexeme);
+        assertEquals(" ", scanner.tokens.get(8).lexeme);
         assertEquals(Type.TokenType.TEXT, scanner.tokens.get(8).type);
 
-        assertEquals("`", scanner.tokens.get(9).lexeme);
-        assertEquals(Type.TokenType.BACKTICK, scanner.tokens.get(9).type);
+        assertEquals("test2.txt`", scanner.tokens.get(9).lexeme);
+        assertEquals(Type.TokenType.TEXT, scanner.tokens.get(9).type);
 
         assertEquals(" \t ", scanner.tokens.get(10).lexeme);
         assertEquals(Type.TokenType.TEXT, scanner.tokens.get(10).type);

@@ -470,26 +470,93 @@ public class Scanner {
                 continue;
             }
 
-            Type.TokenType type = switch (c) {
-                case '$' -> Type.TokenType.DOLLAR;
-                case '{' -> Type.TokenType.LEFT_CURLY_BRACE;
-                case '}' -> Type.TokenType.RIGHT_CURLY_BRACE;
-                case '%' -> Type.TokenType.PERCENT;
-                case '`' -> Type.TokenType.BACKTICK;
-                default -> null;
-            };
+            if(c == '$' && !isEscaped)  {
+                tokens.add(new Type.Token("$", Type.TokenType.DOLLAR));
+                cursor.advance();
 
-            if (type != null) {
-                if (!lexeme.isEmpty()) {
-                    tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
-                    lexeme.setLength(0);
+                Type.TokenType type = switch (cursor.peek()) {
+                    case '{' -> Type.TokenType.LEFT_CURLY_BRACE;
+                    case '}' -> Type.TokenType.RIGHT_CURLY_BRACE;
+                    case '%' -> Type.TokenType.PERCENT;
+                    case '`' -> Type.TokenType.BACKTICK;
+                    default -> null;
+                };
+
+                if (type != null) {
+                    tokens.add(new Type.Token(String.valueOf(cursor.peek()), type));
+                    c =  cursor.advance();
+
+                    // collect all variable/substitution body as atom
+                    if (c == '`') {
+                        while (!cursor.isEnd() && cursor.peek() != '`') {
+                            lexeme.append(cursor.advance());
+                        }
+
+                        if (!lexeme.isEmpty()) {
+                            tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
+                            lexeme.setLength(0);
+                        }
+
+                        char closing = cursor.advance();
+                        if(closing != '`') {
+                            throw new YsharpException(
+                                    YsharpException.YsharpErrorType.PROCESS,
+                                    -1,
+                                    "Unclosed backtick");
+                        }
+                        tokens.add(new Type.Token(String.valueOf("`"), Type.TokenType.BACKTICK));
+
+                    }
+                    else if (c == '{') {
+                        while (!cursor.isEnd() && cursor.peek() != '}') {
+                            lexeme.append(cursor.advance());
+                        }
+
+                        if (!lexeme.isEmpty()) {
+                            tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
+                            lexeme.setLength(0);
+                        }
+
+                        char closing = cursor.advance();
+                        if(closing != '}') {
+                            throw new YsharpException(
+                                    YsharpException.YsharpErrorType.PROCESS,
+                                    -1,
+                                    "Unclosed curly brace");
+                        }
+                        tokens.add(new Type.Token(String.valueOf("}"), Type.TokenType.RIGHT_CURLY_BRACE));
+
+                    }
+                    else if (c == '%') {
+                        while (!cursor.isEnd() && cursor.peek() != '%') {
+                            lexeme.append(cursor.advance());
+                        }
+
+                        if (!lexeme.isEmpty()) {
+                            tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
+                            lexeme.setLength(0);
+                        }
+
+                        char closing = cursor.advance();
+                        if(closing != '%') {
+                            throw new YsharpException(
+                                    YsharpException.YsharpErrorType.PROCESS,
+                                    -1,
+                                    "Unclosed percent");
+                        }
+                        tokens.add(new Type.Token(String.valueOf("%"), Type.TokenType.PERCENT));
+
+                    }
+
+                    isEscaped = false;
+                    continue;
                 }
 
-                tokens.add(new Type.Token(String.valueOf(c), type));
-                cursor.advance();
+                isEscaped = false;
                 continue;
             }
 
+            isEscaped = false;
             lexeme.append(c);
             cursor.advance();
         }
