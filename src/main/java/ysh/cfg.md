@@ -1,7 +1,7 @@
 
 # grammar
 
-list ::= newline* conditional ( separator conditional)* separator? newline*
+list ::= newline* + ( separator conditional)* separator? newline*
 
 separator ::= ";" | "&" | newline+
 newline ::= "\n"
@@ -24,6 +24,8 @@ file_redirection_operator ::= ">" | ">>" | "<" | "2>" | "2>>" | "1>" | "1>>"
 stream_redirection_operator ::=  "2>&1" | "1>&2"
 
 word ::= word_part+
+
+filename :: = word
 
 word_part ::= double_quoted
 | single_quoted

@@ -135,4 +135,90 @@ public class Type {
         }
     }
 
+    static public interface AstNode { }
+
+    final class ConditionalNode implements AstNode {
+        public final PipelineNode first;
+        public final List<ConditionalPart> rest;
+
+        public ConditionalNode(PipelineNode first) {
+            this.first = first;
+            this.rest = new ArrayList<>();
+        }
+
+        final static class ConditionalPart {
+            Token operator;
+            PipelineNode pipeline;
+
+            public ConditionalPart() {}
+
+            public ConditionalPart(Token operator, PipelineNode pipeline) {
+                this.operator = operator;
+                this.pipeline = pipeline;
+            }
+        }
+    }
+
+    final class PipelineNode implements AstNode {
+        public final CommandNode first;
+        public final List<PipelineNode.PipelinePart> rest;
+
+        public PipelineNode(CommandNode first) {
+            this.first = first;
+            this.rest = new ArrayList<>();
+        }
+
+        public class PipelinePart {
+            Type.Token operator;
+            CommandNode command;
+
+            public PipelinePart() {}
+
+            public PipelinePart(Token operator, CommandNode command) {
+                this.operator = operator;
+                this.command = command;
+            }
+        }
+    }
+
+    final class CommandNode implements AstNode {
+        public List<CommandElement> commandElements;
+
+        public CommandNode(List<CommandElement> commandElements) {
+            this.commandElements = commandElements;
+        }
+    }
+
+    static interface CommandElement {}
+
+    final class Word implements CommandElement {
+        public List<Token> wordParts;
+
+        public Word(List<Token> wordParts) {
+            this.wordParts = wordParts;
+        }
+    }
+
+    final class WordBreak implements CommandElement { }
+
+    final class Redirection implements CommandElement {
+        public Token redirection;
+
+        public final Word filename; // may be null if redirection is std stream
+
+        public Redirection(Token redirection, Word filename) {
+            this.redirection = redirection;
+            this.filename = filename;
+        }
+    }
+
+    final class GroupedCommandNode implements AstNode {
+        public final List<ConditionalNode> list;
+        public final List<Redirection> redirections;
+
+        public GroupedCommandNode(List<ConditionalNode> list, List<Redirection> redirections) {
+            this.list = list;
+            this.redirections = redirections;
+        }
+    }
 }
