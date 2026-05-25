@@ -37,7 +37,6 @@ public class ExecRaw extends Function.NativeFunction  implements Callable {
 
         Type.Command shellCommand = new Type.Command();
         shellCommand.args = parts.stream().toList();
-        shellCommand.rawCommand = rawCommand;
         // do not expand since this is native function, expansion only works in shell parser
 
         shellCommand.execute(new CommandExecutor());

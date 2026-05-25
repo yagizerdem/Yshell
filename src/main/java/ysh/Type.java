@@ -13,28 +13,31 @@ public class Type {
     }
 
     static public class Command implements BaseCommand {
-        public String rawCommand;
-        public String expandedCommand;
+
+        public List<AstNode> rawArgs;
         public List<String> args = new ArrayList<>(); // first one is exe name or built in , other params should be command line arguments
+
+        public List<AstNode> redirections = new ArrayList<>();
         public boolean isBuiltIn;
 
         public Command() {
             this.isBuiltIn = false;
+            this.rawArgs = new ArrayList<>();
         }
 
-        public Command(String rawCommand) {
-            this.rawCommand = rawCommand;
+        public Command(List<AstNode> rawArgs) {
+            this.rawArgs = rawArgs;
             this.isBuiltIn = false;
         }
 
-        public Command(String rawCommand, boolean isBuiltIn) {
-            this.rawCommand = rawCommand;
+        public Command(List<AstNode> rawArgs, boolean isBuiltIn) {
+            this.rawArgs = rawArgs;
             this.isBuiltIn = isBuiltIn;
         }
 
-        public Command(String rawCommand, String expandedCommand) {
-            this.rawCommand = rawCommand;
-            this.expandedCommand = expandedCommand;
+        public Command(List<AstNode> rawArgs, List<String> args) {
+            this.rawArgs = rawArgs;
+            this.args = args;
         }
 
         @Override
@@ -44,11 +47,11 @@ public class Type {
     }
 
     static public class Pipe implements BaseCommand {
-        public List<Command> commands = new ArrayList<>();
+        public List<BaseCommand> commands = new ArrayList<>();
 
         public Pipe() {}
 
-        public Pipe(List<Command> commands) {
+        public Pipe(List<BaseCommand> commands) {
             this.commands = commands;
         }
 
@@ -59,10 +62,12 @@ public class Type {
     }
 
     static public class ConditionalCommand implements BaseCommand {
-        public final BaseCommand command;
-        public final Token operator;
+        public BaseCommand command;
+        public Token operator;
 
-        public final ConditionalCommand chainCommand;
+        public ConditionalCommand chainCommand;
+
+        public ConditionalCommand() {};
 
         public ConditionalCommand(BaseCommand command, Token operator, ConditionalCommand chainCommand) {
             this.command =command;
@@ -78,7 +83,22 @@ public class Type {
 
         @Override
         public void execute(CommandExecutor executor) throws YsharpException {
-            executor.ExecuteChainCommand(this);
+            executor.ExecuteConditionalCommand(this);
+        }
+    }
+
+    static public class GroupedCommand implements BaseCommand {
+        public List<BaseCommand> commands;
+
+        public List<AstNode> redirections = new ArrayList<>();
+
+        public GroupedCommand() {
+            this.commands = new ArrayList<>();
+        }
+
+        @Override
+        public void execute(CommandExecutor executor) throws YsharpException {
+            executor.ExecuteGroupedCommand(this);
         }
     }
 
@@ -303,12 +323,12 @@ public class Type {
         }
     }
 
-    public static final class WordBreak implements AstNode, CommandElement{
-        @Override
-        public <R> R accept(Visitor<R> visitor) {
-            return visitor.visitWordBreak(this);
-        }
-    }
+//    public static final class WordBreak implements AstNode, CommandElement{
+//        @Override
+//        public <R> R accept(Visitor<R> visitor) {
+//            return visitor.visitWordBreak(this);
+//        }
+//    }
 
     public static final class Redirection implements AstNode, CommandElement {
         public Token redirection;

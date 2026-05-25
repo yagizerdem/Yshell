@@ -7,7 +7,7 @@ public interface Visitor<R> {
     R visitGroupedCommandNode(Type.GroupedCommandNode node);
 
     R visitWord(Type.Word node);
-    R visitWordBreak(Type.WordBreak node);
+    // R visitWordBreak(Type.WordBreak node);
     R visitRedirection(Type.Redirection node);
 
     R visitUnquotedWord(Type.UnquotedWord node);

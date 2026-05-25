@@ -47,7 +47,7 @@ public class CommandExecutor {
             List<Process> processes = new ArrayList<>();
 
             for (int i = 0; i < pipe.commands.size(); i++) {
-                Type.Command shellCommand = pipe.commands.get(i);
+                Type.Command shellCommand = (Type.Command) pipe.commands.get(i);
 
                 ProcessBuilder pb =
                         new ProcessBuilder(shellCommand.args);
@@ -113,7 +113,7 @@ public class CommandExecutor {
         }
     }
 
-    public void ExecuteChainCommand(Type.ConditionalCommand chainCommand) throws YsharpException {
+    public void ExecuteConditionalCommand(Type.ConditionalCommand chainCommand) {
         chainCommand.execute(this);
 
         int exitStatus = Context.getContext().exitStatus;
@@ -128,6 +128,11 @@ public class CommandExecutor {
         }
     }
 
+    public void ExecuteGroupedCommand(Type.GroupedCommand groupedCommand) {
+        for(Type.BaseCommand command : groupedCommand.commands) {
+            command.execute(this);
+        }
+    }
     public void ExecuteBuiltIn(Type.Command command) {
         // command dispatcher util
         switch (command.args.getFirst()) {
