@@ -84,7 +84,6 @@ public class Type {
     static public char EOF = '\0';
 
     public static enum TokenType {
-        CARET, // ^
         AND_CONDITIONAL, // &&
         OR_CONDITIONAL, // ||
         PIPE, // |
@@ -137,51 +136,51 @@ public class Type {
 
     static public interface AstNode { }
 
-    final class ConditionalNode implements AstNode {
-        public final PipelineNode first;
+    public static final class  ConditionalNode implements AstNode {
+        public final Type.AstNode first;
         public final List<ConditionalPart> rest;
 
-        public ConditionalNode(PipelineNode first) {
+        public ConditionalNode(Type.AstNode first, List<ConditionalPart> rest) {
             this.first = first;
-            this.rest = new ArrayList<>();
+            this.rest = rest;
         }
 
         final static class ConditionalPart {
             Token operator;
-            PipelineNode pipeline;
+            Type.AstNode pipeline;
 
             public ConditionalPart() {}
 
-            public ConditionalPart(Token operator, PipelineNode pipeline) {
+            public ConditionalPart(Token operator, Type.AstNode pipeline) {
                 this.operator = operator;
                 this.pipeline = pipeline;
             }
         }
     }
 
-    final class PipelineNode implements AstNode {
-        public final CommandNode first;
+    public static final class PipelineNode implements AstNode {
+        public final Type.AstNode first;
         public final List<PipelineNode.PipelinePart> rest;
 
-        public PipelineNode(CommandNode first) {
+        public PipelineNode(Type.AstNode first, List<PipelineNode.PipelinePart> rest) {
             this.first = first;
-            this.rest = new ArrayList<>();
+            this.rest = rest;
         }
 
-        public class PipelinePart {
+        public static class PipelinePart {
             Type.Token operator;
-            CommandNode command;
+            Type.AstNode command;
 
             public PipelinePart() {}
 
-            public PipelinePart(Token operator, CommandNode command) {
+            public PipelinePart(Token operator, Type.AstNode command) {
                 this.operator = operator;
                 this.command = command;
             }
         }
     }
 
-    final class CommandNode implements AstNode {
+    public static final class CommandNode implements AstNode {
         public List<CommandElement> commandElements;
 
         public CommandNode(List<CommandElement> commandElements) {
@@ -191,7 +190,7 @@ public class Type {
 
     static interface CommandElement {}
 
-    final class Word implements CommandElement {
+    public static final class Word implements CommandElement, AstNode {
         public List<Token> wordParts;
 
         public Word(List<Token> wordParts) {
@@ -199,9 +198,9 @@ public class Type {
         }
     }
 
-    final class WordBreak implements CommandElement { }
+    public static final class WordBreak implements CommandElement, AstNode { }
 
-    final class Redirection implements CommandElement {
+    public static final class Redirection implements CommandElement, AstNode {
         public Token redirection;
 
         public final Word filename; // may be null if redirection is std stream
@@ -212,11 +211,11 @@ public class Type {
         }
     }
 
-    final class GroupedCommandNode implements AstNode {
-        public final List<ConditionalNode> list;
-        public final List<Redirection> redirections;
+    public static final class GroupedCommandNode implements AstNode {
+        public final List<AstNode> list;
+        public final List<AstNode> redirections;
 
-        public GroupedCommandNode(List<ConditionalNode> list, List<Redirection> redirections) {
+        public GroupedCommandNode(List<AstNode> list, List<AstNode> redirections) {
             this.list = list;
             this.redirections = redirections;
         }

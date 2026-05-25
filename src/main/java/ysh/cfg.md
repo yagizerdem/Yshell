@@ -1,7 +1,7 @@
 
 # grammar
 
-list ::= newline* + ( separator conditional)* separator? newline*
+list ::= newline* (conditional (separator conditional)* separator?)? newline*
 
 separator ::= ";" | "&" | newline+
 newline ::= "\n"
