@@ -2,16 +2,17 @@ package ysh;
 
 import ysharp.treewalk.YsharpException;
 
+import javax.swing.plaf.TableHeaderUI;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Type {
 
-    public interface Line {
+    public interface BaseCommand {
         void execute(CommandExecutor executor);
     }
 
-    static public class Command implements Line {
+    static public class Command implements BaseCommand {
         public String rawCommand;
         public String expandedCommand;
         public List<String> args = new ArrayList<>(); // first one is exe name or built in , other params should be command line arguments
@@ -42,7 +43,7 @@ public class Type {
         }
     }
 
-    static public class Pipe implements Line {
+    static public class Pipe implements BaseCommand {
         public List<Command> commands = new ArrayList<>();
 
         public Pipe() {}
@@ -57,19 +58,19 @@ public class Type {
         }
     }
 
-    static public class ChainCommand implements Line {
-        public final Command command;
+    static public class ConditionalCommand implements BaseCommand {
+        public final BaseCommand command;
         public final Token operator;
 
-        public final ChainCommand chainCommand;
+        public final ConditionalCommand chainCommand;
 
-        public ChainCommand(Command command, Token operator, ChainCommand chainCommand) {
+        public ConditionalCommand(BaseCommand command, Token operator, ConditionalCommand chainCommand) {
             this.command =command;
             this.operator = operator;
             this.chainCommand = chainCommand;
         }
 
-        public ChainCommand(Command command, Token operator) {
+        public ConditionalCommand(BaseCommand command, Token operator) {
             this.command =command;
             this.operator = operator;
             this.chainCommand = null;
@@ -84,7 +85,6 @@ public class Type {
     static public char EOF = '\0';
 
     public static enum TokenType {
-        CARET, // ^
         AND_CONDITIONAL, // &&
         OR_CONDITIONAL, // ||
         PIPE, // |
@@ -135,4 +135,209 @@ public class Type {
         }
     }
 
+    static public interface AstNode {
+        <R> R accept(Visitor<R> visitor);
+    }
+
+    public static final class  ConditionalNode implements AstNode {
+        public final Type.AstNode first;
+        public final List<ConditionalPart> rest;
+
+        public ConditionalNode(Type.AstNode first, List<ConditionalPart> rest) {
+            this.first = first;
+            this.rest = rest;
+        }
+
+        final static class ConditionalPart {
+            Token operator;
+            Type.AstNode pipeline;
+
+            public ConditionalPart() {}
+
+            public ConditionalPart(Token operator, Type.AstNode pipeline) {
+                this.operator = operator;
+                this.pipeline = pipeline;
+            }
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitConditionalNode(this);
+        }
+    }
+
+    public static final class PipelineNode implements AstNode {
+        public final Type.AstNode first;
+        public final List<PipelineNode.PipelinePart> rest;
+
+        public PipelineNode(Type.AstNode first, List<PipelineNode.PipelinePart> rest) {
+            this.first = first;
+            this.rest = rest;
+        }
+
+        public static class PipelinePart {
+            Type.Token operator;
+            Type.AstNode command;
+
+            public PipelinePart() {}
+
+            public PipelinePart(Token operator, Type.AstNode command) {
+                this.operator = operator;
+                this.command = command;
+            }
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitPipelineNode(this);
+        }
+    }
+
+    public static final class CommandNode implements AstNode {
+        public List<AstNode> commandElements;
+
+        public CommandNode(List<AstNode> commandElements) {
+            this.commandElements = commandElements;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitCommandNode(this);
+        }
+    }
+
+    static interface CommandElement {}
+
+    public static final class Word implements AstNode, CommandElement {
+        public List<WordPart> parts;
+
+        public boolean hasTildeExpansion;
+
+        public Word() {
+            this.parts = new ArrayList<>();
+        }
+
+        public Word(boolean hasTildeExpansion) {
+            this.parts = new ArrayList<>();
+            this.hasTildeExpansion = hasTildeExpansion;
+        }
+
+        public Word(List<WordPart> parts, boolean hasTildeExpansion) {
+            this.parts = parts;
+            this.hasTildeExpansion = hasTildeExpansion;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitWord(this);
+        }
+    }
+
+    public interface WordPart  {
+        <R> R accept(Visitor<R> visitor);
+    }
+
+    public static final class UnquotedWord implements WordPart {
+        public Token word;
+
+        public UnquotedWord(Token word) {
+            this.word = word;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitUnquotedWord(this);
+        }
+    }
+
+    public static final class SinglequotedWord implements WordPart {
+        public Token word;
+
+        public SinglequotedWord(Token word) {
+            this.word = word;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitSinglequotedWord(this);
+        }
+    }
+
+    public static final class DoublequotedWord implements WordPart {
+        public List<WordPart> wordParts;
+
+        public DoublequotedWord(List<WordPart> wordParts) {
+            this.wordParts = wordParts;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitDoublequotedWord(this);
+        }
+    }
+
+
+    public static final class ShellCommandWord implements WordPart {
+        public Token word;
+
+        public ShellCommandWord(Token word) {
+            this.word = word;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitShellCommandWord(this);
+        }
+    }
+
+    public static final class VariableWord implements WordPart {
+        public Token word;
+
+        public VariableWord(Token word) {
+            this.word = word;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitVariableWord(this);
+        }
+    }
+
+    public static final class WordBreak implements AstNode, CommandElement{
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitWordBreak(this);
+        }
+    }
+
+    public static final class Redirection implements AstNode, CommandElement {
+        public Token redirection;
+
+        public final Word filename; // may be null if redirection is std stream
+
+        public Redirection(Token redirection, Word filename) {
+            this.redirection = redirection;
+            this.filename = filename;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitRedirection(this);
+        }
+    }
+
+    public static final class GroupedCommandNode implements AstNode {
+        public final List<AstNode> list;
+        public final List<AstNode> redirections;
+
+        public GroupedCommandNode(List<AstNode> list, List<AstNode> redirections) {
+            this.list = list;
+            this.redirections = redirections;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitGroupedCommandNode(this);
+        }
+    }
 }

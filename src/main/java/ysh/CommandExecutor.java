@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class CommandExecutor {
 
@@ -114,17 +113,18 @@ public class CommandExecutor {
         }
     }
 
-    public void ExecuteChainCommand(Type.ChainCommand chainCommand) throws YsharpException {
-        ExecuteCommand(chainCommand.command);
+    public void ExecuteChainCommand(Type.ConditionalCommand chainCommand) throws YsharpException {
+        chainCommand.execute(this);
+
         int exitStatus = Context.getContext().exitStatus;
         if(chainCommand.chainCommand == null) {
             return;
         }
         if(exitStatus == 0 && chainCommand.operator.type == Type.TokenType.AND_CONDITIONAL) {
-            ExecuteChainCommand(chainCommand.chainCommand);
+            chainCommand.chainCommand.execute(this);
         }
         if(exitStatus != 0 && chainCommand.operator.type == Type.TokenType.OR_CONDITIONAL) {
-            ExecuteChainCommand(chainCommand.chainCommand);
+            chainCommand.chainCommand.execute(this);
         }
     }
 
