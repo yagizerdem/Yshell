@@ -2,16 +2,17 @@ package ysh;
 
 import ysharp.treewalk.YsharpException;
 
+import javax.swing.plaf.TableHeaderUI;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Type {
 
-    public interface Line {
+    public interface BaseCommand {
         void execute(CommandExecutor executor);
     }
 
-    static public class Command implements Line {
+    static public class Command implements BaseCommand {
         public String rawCommand;
         public String expandedCommand;
         public List<String> args = new ArrayList<>(); // first one is exe name or built in , other params should be command line arguments
@@ -42,7 +43,7 @@ public class Type {
         }
     }
 
-    static public class Pipe implements Line {
+    static public class Pipe implements BaseCommand {
         public List<Command> commands = new ArrayList<>();
 
         public Pipe() {}
@@ -57,19 +58,19 @@ public class Type {
         }
     }
 
-    static public class ChainCommand implements Line {
-        public final Command command;
+    static public class ConditionalCommand implements BaseCommand {
+        public final BaseCommand command;
         public final Token operator;
 
-        public final ChainCommand chainCommand;
+        public final ConditionalCommand chainCommand;
 
-        public ChainCommand(Command command, Token operator, ChainCommand chainCommand) {
+        public ConditionalCommand(BaseCommand command, Token operator, ConditionalCommand chainCommand) {
             this.command =command;
             this.operator = operator;
             this.chainCommand = chainCommand;
         }
 
-        public ChainCommand(Command command, Token operator) {
+        public ConditionalCommand(BaseCommand command, Token operator) {
             this.command =command;
             this.operator = operator;
             this.chainCommand = null;
@@ -134,7 +135,9 @@ public class Type {
         }
     }
 
-    static public interface AstNode { }
+    static public interface AstNode {
+        <R> R accept(Visitor<R> visitor);
+    }
 
     public static final class  ConditionalNode implements AstNode {
         public final Type.AstNode first;
@@ -155,6 +158,11 @@ public class Type {
                 this.operator = operator;
                 this.pipeline = pipeline;
             }
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitConditionalNode(this);
         }
     }
 
@@ -178,29 +186,131 @@ public class Type {
                 this.command = command;
             }
         }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitPipelineNode(this);
+        }
     }
 
     public static final class CommandNode implements AstNode {
-        public List<CommandElement> commandElements;
+        public List<AstNode> commandElements;
 
-        public CommandNode(List<CommandElement> commandElements) {
+        public CommandNode(List<AstNode> commandElements) {
             this.commandElements = commandElements;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitCommandNode(this);
         }
     }
 
     static interface CommandElement {}
 
-    public static final class Word implements CommandElement, AstNode {
-        public List<Token> wordParts;
+    public static final class Word implements AstNode, CommandElement {
+        public List<WordPart> parts;
 
-        public Word(List<Token> wordParts) {
-            this.wordParts = wordParts;
+        public boolean hasTildeExpansion;
+
+        public Word() {
+            this.parts = new ArrayList<>();
+        }
+
+        public Word(boolean hasTildeExpansion) {
+            this.parts = new ArrayList<>();
+            this.hasTildeExpansion = hasTildeExpansion;
+        }
+
+        public Word(List<WordPart> parts, boolean hasTildeExpansion) {
+            this.parts = parts;
+            this.hasTildeExpansion = hasTildeExpansion;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitWord(this);
         }
     }
 
-    public static final class WordBreak implements CommandElement, AstNode { }
+    public interface WordPart  {
+        <R> R accept(Visitor<R> visitor);
+    }
 
-    public static final class Redirection implements CommandElement, AstNode {
+    public static final class UnquotedWord implements WordPart {
+        public Token word;
+
+        public UnquotedWord(Token word) {
+            this.word = word;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitUnquotedWord(this);
+        }
+    }
+
+    public static final class SinglequotedWord implements WordPart {
+        public Token word;
+
+        public SinglequotedWord(Token word) {
+            this.word = word;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitSinglequotedWord(this);
+        }
+    }
+
+    public static final class DoublequotedWord implements WordPart {
+        public List<WordPart> wordParts;
+
+        public DoublequotedWord(List<WordPart> wordParts) {
+            this.wordParts = wordParts;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitDoublequotedWord(this);
+        }
+    }
+
+
+    public static final class ShellCommandWord implements WordPart {
+        public Token word;
+
+        public ShellCommandWord(Token word) {
+            this.word = word;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitShellCommandWord(this);
+        }
+    }
+
+    public static final class VariableWord implements WordPart {
+        public Token word;
+
+        public VariableWord(Token word) {
+            this.word = word;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitVariableWord(this);
+        }
+    }
+
+    public static final class WordBreak implements AstNode, CommandElement{
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitWordBreak(this);
+        }
+    }
+
+    public static final class Redirection implements AstNode, CommandElement {
         public Token redirection;
 
         public final Word filename; // may be null if redirection is std stream
@@ -208,6 +318,11 @@ public class Type {
         public Redirection(Token redirection, Word filename) {
             this.redirection = redirection;
             this.filename = filename;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitRedirection(this);
         }
     }
 
@@ -218,6 +333,11 @@ public class Type {
         public GroupedCommandNode(List<AstNode> list, List<AstNode> redirections) {
             this.list = list;
             this.redirections = redirections;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitGroupedCommandNode(this);
         }
     }
 }

@@ -7,7 +7,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         // REPL.start();
-        String cmd = "echo yagiz erdem; cmd1 -ar1 | cmd2 -arg2 & set a = 10";
+        String cmd = "echo yagiz'erdem'\"sudenaz  $`echo yetkin`\";";
         Scanner scanner = new Scanner(cmd);
         scanner.scanAll();
         Parser parser = new Parser(scanner.tokens);

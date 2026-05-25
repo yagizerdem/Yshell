@@ -1,9 +1,7 @@
 package ysh;
 
-import com.jcraft.jsch.MAC;
 import ysharp.treewalk.YsharpException;
 
-import javax.lang.model.element.TypeElement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +11,7 @@ public class Parser {
     public int cursor;
 
     public Parser(List<Type.Token> tokens) {
-        this.tokens = tokens.stream().filter(x -> x.type != Type.TokenType.WORD_BREAK).toList();
+        this.tokens = tokens;
         this.cursor = 0;
     }
 
@@ -66,17 +64,21 @@ public class Parser {
         if(isWordStart(peek().type) || peek().type == Type.TokenType.LEFT_PAREN) {
             Type.AstNode command = parseConditional();
             commands.add(command);
+            consumeWordBreak();
 
             while (!isEnd() && (
                     isSeparator(peek().type) &&
                             (peekNext().type == Type.TokenType.LEFT_PAREN || isWordStart(peekNext().type))
                     )) {
                     advance(); // consume separator
+                    consumeWordBreak();
                     Type.AstNode command_ = parseConditional();
+                    consumeWordBreak();
                     commands.add(command_);
             }
 
             if(isSeparator(peek().type)) advance();
+            consumeWordBreak();
 
         }
 
@@ -93,7 +95,9 @@ public class Parser {
         while (!isEnd() &&
                 (check(Type.TokenType.AND_CONDITIONAL) || check(Type.TokenType.OR_CONDITIONAL))) {
             Type.Token op = advance();
+            consumeWordBreak();
             Type.AstNode pipelineNode_ = parsePipeline();
+            consumeWordBreak();
 
             parts.add(new Type.ConditionalNode.ConditionalPart(op, pipelineNode_));
         }
@@ -110,7 +114,9 @@ public class Parser {
         while (!isEnd() &&
                 (check(Type.TokenType.PIPE))) {
             Type.Token pipeOp = advance();
+            consumeWordBreak();
             Type.AstNode command_ = parseCommand();
+            consumeWordBreak();
 
             parts.add(new Type.PipelineNode.PipelinePart(pipeOp, command_));
         }
@@ -135,15 +141,18 @@ public class Parser {
     }
 
     private Type.AstNode parseSimpleCommand() {
-        List<Type.CommandElement> elements = new ArrayList<>();
+        List<Type.AstNode> elements = new ArrayList<>();
 
         elements.add(parseWord());
+        consumeWordBreak();
 
         while (!isEnd() && !isCommandEnd(peek().type)) {
             if (isRedirectionStart(peek().type)) {
                 elements.add(parseRedirection());
+                consumeWordBreak();
             } else if (isWordStart(peek().type)) {
                 elements.add(parseWord());
+                consumeWordBreak();
             } else {
                 break;
             }
@@ -153,39 +162,110 @@ public class Parser {
     }
 
     private Type.Word parseWord() {
-        List<Type.Token> parts = new ArrayList<>();
-
+        List<Type.WordPart> parts = new ArrayList<>();
+        boolean hasTildeExpansion = false;
         if (!isWordStart(peek().type)) {
             throw new YsharpException(YsharpException.YsharpErrorType.SYNTAX,
                     -1,
                     "Expected word");
         }
 
-        while (!isEnd() && isWordPart(peek().type)) {
-            parts.add(advance());
+        while (!isEnd() && isWordStart(peek().type)) {
+            if(peek().type == Type.TokenType.PERCENT) {
+                advance();
+                parts.add(new Type.VariableWord(advance()));
+                consume(Type.TokenType.PERCENT, "missing closing %");
+                consumeWordBreak();
+            }
+            else if(peek().type == Type.TokenType.DOLLAR) {
+                advance();
+                if(match(Type.TokenType.LEFT_CURLY_BRACE)) {
+                    parts.add(new Type.VariableWord(advance()));
+                    consume(Type.TokenType.RIGHT_PAREN, "missing closing }");
+                }
+                else if(match(Type.TokenType.BACKTICK)) {
+                    parts.add(new Type.ShellCommandWord(advance()));
+                    consume(Type.TokenType.BACKTICK, "missing closing `");
+                }
+                consumeWordBreak();
+            }
+            else if(peek().type == Type.TokenType.DOUBLE_QUOTE) {
+                List<Type.WordPart> wordParts = new ArrayList<>();
+                advance();
+                while (!isEnd() && peek().type != Type.TokenType.DOUBLE_QUOTE) {
+                    if(peek().type == Type.TokenType.PERCENT) {
+                        advance();
+                        wordParts.add(new Type.VariableWord(advance()));
+                        consume(Type.TokenType.PERCENT, "missing closing %");
+                    }
+                    else if(peek().type == Type.TokenType.DOLLAR) {
+                        advance();
+                        if(match(Type.TokenType.LEFT_CURLY_BRACE)) {
+                            wordParts.add(new Type.VariableWord(advance()));
+                            consume(Type.TokenType.RIGHT_PAREN, "missing closing }");
+                        }
+                        else if(match(Type.TokenType.BACKTICK)) {
+                            wordParts.add(new Type.VariableWord(advance()));
+                            consume(Type.TokenType.BACKTICK, "missing closing `");
+                        }
+                        consumeWordBreak();
+                    }
+                    else if(peek().type == Type.TokenType.SINGLE_QUOTE) {
+                        advance();
+                        wordParts.add(new Type.SinglequotedWord(advance()));
+                        consume(Type.TokenType.SINGLE_QUOTE, "missing closing single quote \'");
+                        consumeWordBreak();
+                    }
+                    else {
+                        wordParts.add(new Type.UnquotedWord(advance()));
+                    }
+                }
+                parts.add(new Type.DoublequotedWord(wordParts));
+                consume(Type.TokenType.DOUBLE_QUOTE, "missing closing double quote \"");
+                consumeWordBreak();
+            }
+            else if(peek().type == Type.TokenType.SINGLE_QUOTE) {
+                advance();
+                parts.add(new Type.SinglequotedWord(advance()));
+                consume(Type.TokenType.SINGLE_QUOTE, "missing closing single quote \'");
+                consumeWordBreak();
+            }
+            else if(peek().type == Type.TokenType.TILDE) {
+                hasTildeExpansion = true;
+            }
+            else {
+                // unquoted
+                parts.add(new Type.UnquotedWord(advance()));
+            }
         }
 
-        return new Type.Word(parts);
+        return new Type.Word(parts, hasTildeExpansion);
     }
 
-    private Type.Redirection parseRedirection() {
+
+    private Type.AstNode parseRedirection() {
         Type.Token operator = advance();
+        consumeWordBreak();
 
         if (isStreamRedirectionOperator(operator.type)) {
             return new Type.Redirection(operator, null);
         }
 
         Type.Word filename = parseWord();
+        consumeWordBreak();
 
         return new Type.Redirection(operator, filename);
     }
 
     private Type.GroupedCommandNode parseGroupedCommand() {
         consume(Type.TokenType.LEFT_PAREN, "Expected '('");
+        consumeWordBreak();
 
         List<Type.AstNode> commands = parseList();
+        consumeWordBreak();
 
         consume(Type.TokenType.RIGHT_PAREN, "Expected ')' after grouped command");
+        consumeWordBreak();
 
         List<Type.AstNode> redirections = new ArrayList<>();
 
@@ -209,6 +289,7 @@ public class Parser {
                 type == Type.TokenType.DOUBLE_QUOTE ||
                 type == Type.TokenType.DOLLAR ||
                 type == Type.TokenType.TEXT ||
+                type == Type.TokenType.PERCENT ||
                 type == Type.TokenType.TILDE;
     }
 
@@ -253,6 +334,9 @@ public class Parser {
                 type == Type.TokenType.RIGHT_CURLY_BRACE;
     }
 
+    private void consumeWordBreak() {
+        while (peek().type == Type.TokenType.WORD_BREAK) advance();
+    }
     public void consumeToken(Type.TokenType type) {
         while (!isEnd() && peek().type == type) advance();
     }
