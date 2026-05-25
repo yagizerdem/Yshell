@@ -66,15 +66,17 @@ public class Parser {
             commands.add(command);
             consumeWordBreak();
 
-            while (!isEnd() && (
-                    isSeparator(peek().type) &&
-                            (peekNext().type == Type.TokenType.LEFT_PAREN || isWordStart(peekNext().type))
-                    )) {
-                    advance(); // consume separator
-                    consumeWordBreak();
-                    Type.AstNode command_ = parseConditional();
-                    consumeWordBreak();
-                    commands.add(command_);
+            while (!isEnd() && isSeparator(peek().type)) {
+                advance(); // consume ; or & or newline
+                consumeWordBreak();
+
+                if (!(peek().type == Type.TokenType.LEFT_PAREN || isWordStart(peek().type))) {
+                    break;
+                }
+
+                Type.AstNode command_ = parseConditional();
+                consumeWordBreak();
+                commands.add(command_);
             }
 
             if(isSeparator(peek().type)) advance();
