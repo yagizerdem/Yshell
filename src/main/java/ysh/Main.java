@@ -1,15 +1,16 @@
 package ysh;
 
-
-import org.apache.hadoop.thirdparty.org.checkerframework.checker.units.qual.A;
-
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
 
         // REPL.start();
-        String cmd = "echo yagiz'erdem'\"sudenaz  $`echo yetkin`\" >> file.txt ; echo test > file2.txt & ((cmd1 && cmd2) | cmd3) >> out.txt  ";
+
+        Context ctx = Context.getContext();
+        ctx.env.setVariable("abc" , "erdem");
+
+        String cmd = "echo ~~yagi%abc%z $abc 'def' erd~em > %abc%";
         Scanner scanner = new Scanner(cmd);
         scanner.scanAll();
         Parser parser = new Parser(scanner.tokens);
@@ -19,7 +20,13 @@ public class Main {
 
         List<Type.BaseCommand> commands = reducer.vectorizedCommands;
 
+        Expansion expansion = new Expansion();
+        for(Type.BaseCommand command : commands) {
+            command.variableSubstitution(expansion);
+            command.tildeSubstitution(expansion);
+        }
 
         int a = 10;
+
     }
 }

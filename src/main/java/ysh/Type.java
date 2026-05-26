@@ -2,7 +2,6 @@ package ysh;
 
 import ysharp.treewalk.YsharpException;
 
-import javax.swing.plaf.TableHeaderUI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,14 +9,18 @@ public class Type {
 
     public interface BaseCommand {
         void execute(CommandExecutor executor);
+
+        void variableSubstitution(Expansion expansion);
+
+        void tildeSubstitution(Expansion expansion);
     }
 
     static public class Command implements BaseCommand {
 
-        public List<AstNode> rawArgs;
+        public List<Word> rawArgs;
         public List<String> args = new ArrayList<>(); // first one is exe name or built in , other params should be command line arguments
 
-        public List<AstNode> redirections = new ArrayList<>();
+        public List<Redirection> redirections = new ArrayList<>();
         public boolean isBuiltIn;
 
         public Command() {
@@ -25,17 +28,17 @@ public class Type {
             this.rawArgs = new ArrayList<>();
         }
 
-        public Command(List<AstNode> rawArgs) {
+        public Command(List<Word> rawArgs) {
             this.rawArgs = rawArgs;
             this.isBuiltIn = false;
         }
 
-        public Command(List<AstNode> rawArgs, boolean isBuiltIn) {
+        public Command(List<Word> rawArgs, boolean isBuiltIn) {
             this.rawArgs = rawArgs;
             this.isBuiltIn = isBuiltIn;
         }
 
-        public Command(List<AstNode> rawArgs, List<String> args) {
+        public Command(List<Word> rawArgs, List<String> args) {
             this.rawArgs = rawArgs;
             this.args = args;
         }
@@ -43,6 +46,16 @@ public class Type {
         @Override
         public void execute(CommandExecutor executor) throws YsharpException {
             executor.ExecuteCommand(this);
+        }
+
+        @Override
+        public void variableSubstitution(Expansion expansion) {
+            expansion.VariableSubstitution(this);
+        }
+
+        @Override
+        public void tildeSubstitution(Expansion expansion) {
+            expansion.TildeSubstitution(this);
         }
     }
 
@@ -58,6 +71,20 @@ public class Type {
         @Override
         public void execute(CommandExecutor executor) throws YsharpException {
             executor.ExecutePipe(this);
+        }
+
+        @Override
+        public void variableSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.variableSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void tildeSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.tildeSubstitution(expansion);
+            }
         }
     }
 
@@ -85,6 +112,26 @@ public class Type {
         public void execute(CommandExecutor executor) throws YsharpException {
             executor.ExecuteConditionalCommand(this);
         }
+
+        @Override
+        public void variableSubstitution(Expansion expansion) {
+            command.variableSubstitution(expansion);
+            ConditionalCommand cur = this.chainCommand;
+            while (cur != null && cur.command != null) {
+                cur.variableSubstitution(expansion);
+                cur = cur.chainCommand;
+            }
+        }
+
+        @Override
+        public void tildeSubstitution(Expansion expansion) {
+            command.variableSubstitution(expansion);
+            ConditionalCommand cur = this.chainCommand;
+            while (cur != null && cur.command != null) {
+                cur.tildeSubstitution(expansion);
+                cur = cur.chainCommand;
+            }
+        }
     }
 
     static public class GroupedCommand implements BaseCommand {
@@ -99,6 +146,20 @@ public class Type {
         @Override
         public void execute(CommandExecutor executor) throws YsharpException {
             executor.ExecuteGroupedCommand(this);
+        }
+
+        @Override
+        public void variableSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.variableSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void tildeSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.tildeSubstitution(expansion);
+            }
         }
     }
 
@@ -146,7 +207,7 @@ public class Type {
     }
 
     static public class Token {
-        public final String lexeme;
+        public String lexeme;
         public final TokenType type;
 
         public Token(String lexeme, TokenType type) {
