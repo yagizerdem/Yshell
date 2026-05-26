@@ -139,7 +139,7 @@ public class Type {
 
         @Override
         public void tildeSubstitution(Expansion expansion) {
-            command.variableSubstitution(expansion);
+            command.tildeSubstitution(expansion);
             ConditionalCommand cur = this.chainCommand;
             while (cur != null && cur.command != null) {
                 cur.tildeSubstitution(expansion);

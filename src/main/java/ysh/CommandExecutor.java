@@ -114,7 +114,7 @@ public class CommandExecutor {
     }
 
     public void ExecuteConditionalCommand(Type.ConditionalCommand chainCommand) {
-        chainCommand.execute(this);
+        chainCommand.command.execute(this);
 
         int exitStatus = Context.getContext().exitStatus;
         if(chainCommand.chainCommand == null) {
