@@ -66,11 +66,9 @@ public class Expansion {
             @Override
             public Void visitVariableWord(Type.VariableWord node) {
                 Context context = Context.getContext();
-                String variable = context.env.getVariableOrDefault(node.word.lexeme, null);
-                if(variable != null) {
-                    // expand
-                    node.word.lexeme = variable;
-                }
+                String variable = context.env.getVariableOrDefault(node.word.lexeme, "");
+                // expand
+                node.word.lexeme = variable;
                 return null;
             }
         }

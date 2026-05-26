@@ -13,6 +13,8 @@ public class Type {
         void variableSubstitution(Expansion expansion);
 
         void tildeSubstitution(Expansion expansion);
+
+        void resolve(CommandResolver resolver);
     }
 
     static public class Command implements BaseCommand {
@@ -57,6 +59,11 @@ public class Type {
         public void tildeSubstitution(Expansion expansion) {
             expansion.TildeSubstitution(this);
         }
+
+        @Override
+        public void resolve(CommandResolver resolver) {
+            resolver.Resolve(this);
+        }
     }
 
     static public class Pipe implements BaseCommand {
@@ -84,6 +91,13 @@ public class Type {
         public void tildeSubstitution(Expansion expansion) {
             for(BaseCommand command : this.commands) {
                 command.tildeSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void resolve(CommandResolver resolver) {
+            for(BaseCommand command : this.commands) {
+                command.resolve(resolver);
             }
         }
     }
@@ -132,6 +146,16 @@ public class Type {
                 cur = cur.chainCommand;
             }
         }
+
+        @Override
+        public void resolve(CommandResolver resolver) {
+            command.resolve(resolver);
+            ConditionalCommand cur = this.chainCommand;
+            while (cur != null && cur.command != null) {
+                cur.resolve(resolver);
+                cur = cur.chainCommand;
+            }
+        }
     }
 
     static public class GroupedCommand implements BaseCommand {
@@ -159,6 +183,13 @@ public class Type {
         public void tildeSubstitution(Expansion expansion) {
             for(BaseCommand command : this.commands) {
                 command.tildeSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void resolve(CommandResolver resolver) {
+            for(BaseCommand command : this.commands) {
+                command.resolve(resolver);
             }
         }
     }
