@@ -9,9 +9,8 @@ public class Main {
 
        try {
            Context ctx = Context.getContext();
-           ctx.env.setVariable("abc" , "erdem");
 
-           String cmd = "echo ^~~yagi^%abc^%z $abc 'def' erd~em > %abc%";
+           String cmd = "set abc='fish fucker' & echo ~~yagi%abc%z $abc 'def' erd~em > %abc%";
            List<Type.Pchar> processed = Preprocess.preprocess(cmd);
 
            Scanner scanner = new Scanner(processed);
@@ -24,13 +23,23 @@ public class Main {
            List<Type.BaseCommand> commands = reducer.vectorizedCommands;
 
            Expansion expansion = new Expansion();
+           CommandResolver commandResolver = new CommandResolver();
+           CommandExecutor executor = new CommandExecutor();
+
            for(Type.BaseCommand command : commands) {
+               // expansion
                command.variableSubstitution(expansion);
                command.tildeSubstitution(expansion);
+
+               // prepare command
+               command.resolve(commandResolver);
+
+               // execution
+               command.execute(executor);
            }
 
            int a = 10;
-       }catch (Exception ex) {
+       } catch (Exception ex) {
            System.out.println(ex.getMessage());
        }
 
