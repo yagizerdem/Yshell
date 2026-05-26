@@ -216,6 +216,23 @@ public class Type {
         }
     }
 
+    static public final class Pchar{
+        char c;
+        boolean isEscaped;
+
+        public Pchar() {}
+
+        public Pchar(char c, boolean isEscaped) {
+            this.c = c;
+            this.isEscaped = isEscaped;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(this.c);
+        }
+    }
+
     static public interface AstNode {
         <R> R accept(Visitor<R> visitor);
     }

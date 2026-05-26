@@ -2,6 +2,7 @@ package ysh.ScannerTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import ysh.Preprocess;
 import ysh.Scanner;
 import ysh.Type;
 
@@ -11,7 +12,7 @@ public class ScannerWordBreakTest {
 
     @Test
     void wordBreakMultipleSpacesCollapseToOne() {
-        Scanner scanner = new Scanner("echo     hello");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo     hello"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -27,7 +28,7 @@ public class ScannerWordBreakTest {
 
     @Test
     void wordBreakTabsCollapseToOne() {
-        Scanner scanner = new Scanner("echo\t\tname");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo\t\tname"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -43,7 +44,7 @@ public class ScannerWordBreakTest {
 
     @Test
     void leadingSpacesDoNotCreateWordBreak() {
-        Scanner scanner = new Scanner("   echo");
+        Scanner scanner = new Scanner(Preprocess.preprocess("   echo"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -54,7 +55,7 @@ public class ScannerWordBreakTest {
 
     @Test
     void trailingSpacesCreateWordBreakAfterText() {
-        Scanner scanner = new Scanner("echo   ");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo   "));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -67,7 +68,7 @@ public class ScannerWordBreakTest {
 
     @Test
     void noWordBreakAroundAdjacentQuote() {
-        Scanner scanner = new Scanner("a\"b\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("a\"b\""));
         scanner.scanAll();
 
         assertEquals("a", scanner.tokens.get(0).lexeme);
@@ -87,7 +88,7 @@ public class ScannerWordBreakTest {
 
     @Test
     void wordBreakBeforeSeparatedQuote() {
-        Scanner scanner = new Scanner("a \"b\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("a \"b\""));
         scanner.scanAll();
 
         assertEquals("a", scanner.tokens.get(0).lexeme);
@@ -109,7 +110,7 @@ public class ScannerWordBreakTest {
 
     @Test
     void wordBreakAroundOperator() {
-        Scanner scanner = new Scanner("echo  >  out.txt");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo  >  out.txt"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -129,7 +130,7 @@ public class ScannerWordBreakTest {
 
     @Test
     void newlineIsNotWordBreak() {
-        Scanner scanner = new Scanner("echo\nhello");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo\nhello"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);

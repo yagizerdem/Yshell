@@ -2,6 +2,7 @@ package ysh.ScannerTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import ysh.Preprocess;
 import ysh.Scanner;
 import ysh.Type;
 
@@ -11,7 +12,7 @@ class ScannerTest {
 
     @Test
     void scansSimpleCommand() {
-        Scanner scanner = new Scanner("echo hello");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo hello"));
         scanner.scanAll();
 
         assertNotNull(scanner);
@@ -29,7 +30,7 @@ class ScannerTest {
 
     @Test
     void scansRedirectionOut() {
-        Scanner scanner = new Scanner("echo hello > out.txt");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo hello > out.txt"));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.TEXT, scanner.tokens.get(0).type);
@@ -54,7 +55,7 @@ class ScannerTest {
 
     @Test
     void scansPipe() {
-        Scanner scanner = new Scanner("echo hello | findstr h");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo hello | findstr h"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -80,7 +81,7 @@ class ScannerTest {
 
     @Test
     void scansConditionalAnd() {
-        Scanner scanner = new Scanner("echo hello && echo found");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo hello && echo found"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -97,7 +98,7 @@ class ScannerTest {
 
     @Test
     void scansConditionalOr() {
-        Scanner scanner = new Scanner("badcommand || echo failed");
+        Scanner scanner = new Scanner(Preprocess.preprocess("badcommand || echo failed"));
         scanner.scanAll();
 
         assertEquals("badcommand", scanner.tokens.get(0).lexeme);
@@ -113,7 +114,7 @@ class ScannerTest {
 
     @Test
     void scansAppendRedirection() {
-        Scanner scanner = new Scanner("echo hello >> out.txt");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo hello >> out.txt"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -137,7 +138,7 @@ class ScannerTest {
 
     @Test
     void scansStdoutRedirection() {
-        Scanner scanner = new Scanner("echo hello 1> out.txt");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo hello 1> out.txt"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -162,7 +163,7 @@ class ScannerTest {
 
     @Test
     void scansStderrRedirection() {
-        Scanner scanner = new Scanner("cmd 2> err.txt");
+        Scanner scanner = new Scanner(Preprocess.preprocess("cmd 2> err.txt"));
         scanner.scanAll();
 
         assertEquals("cmd", scanner.tokens.get(0).lexeme);
@@ -182,7 +183,7 @@ class ScannerTest {
 
     @Test
     void scansStderrToStdout() {
-        Scanner scanner = new Scanner("cmd 2>&1");
+        Scanner scanner = new Scanner(Preprocess.preprocess("cmd 2>&1"));
         scanner.scanAll();
 
         assertEquals("cmd", scanner.tokens.get(0).lexeme);
@@ -197,7 +198,7 @@ class ScannerTest {
 
     @Test
     void scansStdoutToStderr() {
-        Scanner scanner = new Scanner("cmd 1>&2");
+        Scanner scanner = new Scanner(Preprocess.preprocess("cmd 1>&2"));
         scanner.scanAll();
 
         assertEquals("cmd", scanner.tokens.get(0).lexeme);
@@ -213,7 +214,7 @@ class ScannerTest {
 
     @Test
     void scansNewline() {
-        Scanner scanner = new Scanner("echo a\necho b");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo a\necho b"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -239,7 +240,7 @@ class ScannerTest {
 
     @Test
     void scansSemicolonSeparator() {
-        Scanner scanner = new Scanner("echo a; echo b");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo a; echo b"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -267,7 +268,7 @@ class ScannerTest {
 
     @Test
     void scansAmpersandSeparator() {
-        Scanner scanner = new Scanner("echo a & echo b");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo a & echo b"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -297,7 +298,7 @@ class ScannerTest {
 
     @Test
     void scansDoubleQuotes() {
-        Scanner scanner = new Scanner("echo \"hello world\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo \"hello world\""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -325,7 +326,7 @@ class ScannerTest {
 
     @Test
     void mixedQuotes() {
-        Scanner scanner = new Scanner("echo \"hello 'world' \"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo \"hello 'world' \""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -356,7 +357,7 @@ class ScannerTest {
 
     @Test
     void mixedQuotes2() {
-        Scanner scanner = new Scanner("echo \"hello 'world \"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo \"hello 'world \""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -387,7 +388,7 @@ class ScannerTest {
 
     @Test
     void scanSingleQuote() {
-        Scanner scanner = new Scanner("echo 'hello ^'world' ");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo 'hello ^'world' "));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -411,7 +412,7 @@ class ScannerTest {
 
     @Test
     void scanSingleQuote2() {
-        Scanner scanner = new Scanner("echo 'hello >> 2>&1 && ^^^'world' ");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo 'hello >> 2>&1 && ^^^'world' "));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -435,7 +436,7 @@ class ScannerTest {
 
     @Test
     void operatorInsideDoubleQuoteIsText() {
-        Scanner scanner = new Scanner("echo \"a >> b && c | d\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo \"a >> b && c | d\""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -466,7 +467,7 @@ class ScannerTest {
 
     @Test
     void expansionInsideDoubleQuoteIsStillTokenized() {
-        Scanner scanner = new Scanner("echo \"hello $USER %PATH%\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo \"hello $USER %PATH%\""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -494,7 +495,7 @@ class ScannerTest {
 
     @Test
     void escapedOperatorOutsideQuoteBecomesText() {
-        Scanner scanner = new Scanner("echo ^& ^| ^> ^<");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo ^& ^| ^> ^<"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -525,7 +526,7 @@ class ScannerTest {
 
     @Test
     void escapedDollarDoesNotStartExpansion() {
-        Scanner scanner = new Scanner("echo ^$USER");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo ^$USER"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -541,7 +542,7 @@ class ScannerTest {
 
     @Test
     void dollarExpansionOutsideQuote() {
-        Scanner scanner = new Scanner("echo $USER");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $USER"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -559,7 +560,7 @@ class ScannerTest {
 
     @Test
     void braceExpansionOutsideQuote() {
-        Scanner scanner = new Scanner("echo ${USER}");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo ${USER}"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -579,7 +580,7 @@ class ScannerTest {
 
     @Test
     void percentExpansionOutsideQuote() {
-        Scanner scanner = new Scanner("echo %PATH%");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo %PATH%"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -598,7 +599,7 @@ class ScannerTest {
 
     @Test
     void scansGroupedCommand() {
-        Scanner scanner = new Scanner("(echo a & echo b) > out.txt");
+        Scanner scanner = new Scanner(Preprocess.preprocess("(echo a & echo b) > out.txt"));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.LEFT_PAREN, scanner.tokens.get(0).type);
@@ -641,7 +642,7 @@ class ScannerTest {
 
     @Test
     void multipleNewlinesAreTokens() {
-        Scanner scanner = new Scanner("echo a\n\n\necho b");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo a\n\n\necho b"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -669,7 +670,7 @@ class ScannerTest {
 
     @Test
     void Backticks() {
-        Scanner scanner = new Scanner("echo $`cat test.txt`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`cat test.txt`"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -694,7 +695,7 @@ class ScannerTest {
 
     @Test
     void doubleQuoteWithBackticks2() {
-        Scanner scanner = new Scanner("echo \"$`cat test.txt` `cat test2.txt` \t >> \n\n $`cat text.txt3`\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo \"$`cat test.txt` `cat test2.txt` \t >> \n\n $`cat text.txt3`\""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -758,7 +759,7 @@ class ScannerTest {
 
     @Test
     void wordBoundary() {
-        Scanner scanner = new Scanner("echo yagiz\"erdem\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo yagiz\"erdem\""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -781,7 +782,7 @@ class ScannerTest {
         assertEquals(Type.TokenType.EOF, scanner.tokens.get(6).type);
 
 
-        scanner = new Scanner("echo yagiz^\"erdem^\"");
+        scanner = new Scanner(Preprocess.preprocess("echo yagiz^\"erdem^\""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -797,7 +798,7 @@ class ScannerTest {
 
     @Test
     void wordBreakOnEmpty() {
-        Scanner scanner = new Scanner(" ");
+        Scanner scanner = new Scanner(Preprocess.preprocess(" "));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.EOF, scanner.tokens.get(0).type);
@@ -805,7 +806,7 @@ class ScannerTest {
 
     @Test
     void wordBreakUnquotedSingle() {
-        Scanner scanner = new Scanner(" a ");
+        Scanner scanner = new Scanner(Preprocess.preprocess(" a "));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.TEXT, scanner.tokens.get(0).type);
@@ -815,7 +816,7 @@ class ScannerTest {
 
     @Test
     void wordBreakUnquotedDouble() {
-        Scanner scanner = new Scanner(" a b ");
+        Scanner scanner = new Scanner(Preprocess.preprocess(" a b "));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.TEXT, scanner.tokens.get(0).type);
@@ -824,7 +825,7 @@ class ScannerTest {
         assertEquals(Type.TokenType.WORD_BREAK, scanner.tokens.get(3).type);
         assertEquals(Type.TokenType.EOF, scanner.tokens.get(4).type);
 
-        scanner = new Scanner(" a b");
+        scanner = new Scanner(Preprocess.preprocess(" a b"));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.TEXT, scanner.tokens.get(0).type);

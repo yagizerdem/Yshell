@@ -1,6 +1,7 @@
 package ysh.ScannerTest;
 
 import org.junit.jupiter.api.Test;
+import ysh.Preprocess;
 import ysh.Scanner;
 import ysh.Type;
 
@@ -10,7 +11,7 @@ public class TildeTest {
 
     @Test
     void simpleTilde() {
-        Scanner scanner = new Scanner("cd ~");
+        Scanner scanner = new Scanner(Preprocess.preprocess("cd ~"));
         scanner.scanAll();
 
         assertEquals("cd", scanner.tokens.get(0).lexeme);
@@ -23,7 +24,7 @@ public class TildeTest {
 
     @Test
     void tildeWithPath() {
-        Scanner scanner = new Scanner("cd ~/Desktop");
+        Scanner scanner = new Scanner(Preprocess.preprocess("cd ~/Desktop"));
         scanner.scanAll();
 
         assertEquals("cd", scanner.tokens.get(0).lexeme);
@@ -37,7 +38,7 @@ public class TildeTest {
 
     @Test
     void tildeAfterTextShouldNotBeSpecial() {
-        Scanner scanner = new Scanner("echo abc~");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo abc~"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -49,7 +50,7 @@ public class TildeTest {
 
     @Test
     void tildeInMiddleOfPathShouldNotBeSpecial() {
-        Scanner scanner = new Scanner("echo /tmp/~user/file");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo /tmp/~user/file"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -61,7 +62,7 @@ public class TildeTest {
 
     @Test
     void tildeInsideDoubleQuotesShouldNotBeSpecial() {
-        Scanner scanner = new Scanner("echo \"~\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo \"~\""));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -74,7 +75,7 @@ public class TildeTest {
 
     @Test
     void tildeInsideSingleQuotesShouldNotBeSpecial() {
-        Scanner scanner = new Scanner("echo '~'");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo '~'"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -88,7 +89,7 @@ public class TildeTest {
 
     @Test
     void escapedTildeShouldBeText() {
-        Scanner scanner = new Scanner("echo ^~");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo ^~"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -100,7 +101,7 @@ public class TildeTest {
 
     @Test
     void assignmentLikeWordTildeShouldNotBeSpecialInScanner() {
-        Scanner scanner = new Scanner("HOME=~");
+        Scanner scanner = new Scanner(Preprocess.preprocess("HOME=~"));
         scanner.scanAll();
 
         assertEquals("HOME=~", scanner.tokens.get(0).lexeme);
@@ -110,7 +111,7 @@ public class TildeTest {
 
     @Test
     void tildeBeforeBacktickAtWordStartShouldBeSpecial() {
-        Scanner scanner = new Scanner("echo ~$`cmd`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo ~$`cmd`"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -125,7 +126,7 @@ public class TildeTest {
 
     @Test
     void backtickTextContainsTildeRaw() {
-        Scanner scanner = new Scanner("echo $`cd ~/Desktop`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`cd ~/Desktop`"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -141,7 +142,7 @@ public class TildeTest {
 
     @Test
     void escapedTildeAtWordStartShouldNotBeSpecial() {
-        Scanner scanner = new Scanner("^~/Desktop");
+        Scanner scanner = new Scanner(Preprocess.preprocess("^~/Desktop"));
         scanner.scanAll();
 
         assertEquals("~/Desktop", scanner.tokens.get(0).lexeme);
@@ -152,7 +153,7 @@ public class TildeTest {
 
     @Test
     void escapedTildeAfterCommandShouldNotBeSpecial() {
-        Scanner scanner = new Scanner("cd ^~/Desktop");
+        Scanner scanner = new Scanner(Preprocess.preprocess("cd ^~/Desktop"));
         scanner.scanAll();
 
         assertEquals("cd", scanner.tokens.get(0).lexeme);
@@ -166,7 +167,7 @@ public class TildeTest {
 
     @Test
     void escapedTildeInMiddleShouldStayText() {
-        Scanner scanner = new Scanner("echo abc^~def");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo abc^~def"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);

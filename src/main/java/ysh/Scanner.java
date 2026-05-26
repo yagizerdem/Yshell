@@ -11,7 +11,6 @@ public class Scanner {
 
     public int start;
 
-    public boolean isEscaped;
     public final List<Type.Token> tokens = new ArrayList<>();
 
     public static enum State {
@@ -23,15 +22,18 @@ public class Scanner {
 
     private State state = State.UNQUOTE;
 
-    public Scanner(String src)
+    public Scanner(List<Type.Pchar> src)
     {
         this.cursor = new Cursor(src);
         this.start = 0;
-        this.isEscaped = false;
     }
 
     private void addToken(Type.TokenType type) {
-        this.tokens.add(new Type.Token(cursor.src.substring(start, cursor.cursor), type));
+        StringBuilder lexeme = new StringBuilder();
+        for (int i = start; i < cursor.cursor; i++) {
+            lexeme.append(cursor.src.get(i).c);
+        }
+        this.tokens.add(new Type.Token(lexeme.toString(), type));
     }
 
     public void scanAll() {
@@ -43,55 +45,43 @@ public class Scanner {
     }
 
     public void scan() {
-        char c = this.cursor.advance();
+        boolean isEscaped = this.cursor.peek().isEscaped;
+        char c = this.cursor.advance().c;
         switch (c) {
             // single chars
             case ';': {
                 if (!isEscaped) {
                     addToken(Type.TokenType.SEMI_COLON);
-                    isEscaped = false;
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case '~': {
                 if (!isEscaped) {
                     addToken(Type.TokenType.TILDE);
-                    isEscaped = false;
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case '$': {
                 if (!isEscaped) {
                     addToken(Type.TokenType.DOLLAR);
-                    isEscaped = false;
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case '<': {
                 if (!isEscaped) {
                     addToken(Type.TokenType.REDIRECT_IN);
-                    isEscaped = false;
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case '^' : {
-                if(!this.isEscaped) {
-                    this.isEscaped = true;
-                    break;
-                }
-                // collect unquoted word
                 collectWord();
                 break;
             }
@@ -118,7 +108,6 @@ public class Scanner {
                     break;
                 }
 
-                isEscaped = false;
                 collectWord();
                 break;
             }
@@ -133,57 +122,46 @@ public class Scanner {
                     break;
                 }
                 // collect word
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case '(': {
                 if (!isEscaped) {
-                    isEscaped = false;
                     addToken(Type.TokenType.LEFT_PAREN);
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case ')': {
                 if (!isEscaped) {
-                    isEscaped = false;
                     addToken(Type.TokenType.RIGHT_PAREN);
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case '%': {
                 if (!isEscaped) {
-                    isEscaped = false;
                     addToken(Type.TokenType.PERCENT);
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case '{': {
                 if (!isEscaped) {
-                    isEscaped = false;
                     addToken(Type.TokenType.LEFT_CURLY_BRACE);
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
             case '}': {
                 if (!isEscaped) {
-                    isEscaped = false;
                     addToken(Type.TokenType.RIGHT_CURLY_BRACE);
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
@@ -199,7 +177,6 @@ public class Scanner {
                     addToken(Type.TokenType.AND_SEPARATOR);
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
@@ -213,7 +190,6 @@ public class Scanner {
                     addToken(Type.TokenType.PIPE);
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
@@ -228,7 +204,6 @@ public class Scanner {
                     addToken(Type.TokenType.REDIRECT_OUT);
                     break;
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
@@ -245,20 +220,16 @@ public class Scanner {
                         if (cursor.match('&')) {
                             if (cursor.match('2')) {
                                 addToken(Type.TokenType.REDIRECT_STDOUT_TO_STDERR);
-                                isEscaped = false;
                                 break;
                             }
-                            isEscaped = false;
                             collectWord();
                             break;
                         }
 
                         addToken(Type.TokenType.REDIRECT_STDOUT);
-                        isEscaped = false;
                         break;
                     }
                 }
-                isEscaped = false;
                 collectWord();
                 break;
             }
@@ -268,35 +239,29 @@ public class Scanner {
                     if (cursor.match('>')) {
                         if (cursor.match('>')) {
                             addToken(Type.TokenType.REDIRECT_STDERR_APPEND);
-                            isEscaped = false;
                             break;
                         }
 
                         if (cursor.match('&')) {
                             if (cursor.match('1')) {
                                 addToken(Type.TokenType.REDIRECT_STDERR_TO_STDOUT);
-                                isEscaped = false;
                                 break;
                             }
 
                             collectWord();
-                            isEscaped = false;
                             break;
                         }
 
                         addToken(Type.TokenType.REDIRECT_STDERR);
-                        isEscaped = false;
                         break;
                     }
                 }
 
-                isEscaped = false;
                 collectWord();
                 break;
             }
             default: {
                 if (isBlank(c)) {
-                    isEscaped = false;
 
                     while (!cursor.isEnd() && isBlank(cursor.peek())) {
                         cursor.advance();
@@ -309,38 +274,24 @@ public class Scanner {
                     break;
                 }
                 if(c == '\n') {
-                    isEscaped = false;
                     addToken(Type.TokenType.NEWLINE);
                     break;
                 }
 
-                isEscaped = false;
                 collectWord();
             }
         }
     }
 
     public void collectWord() {
-        String word = String.valueOf(cursor.prev());
+        boolean isEscaped = this.cursor.peek().isEscaped;
+        String word = String.valueOf(cursor.prev().c);
         while (!cursor.isEnd() && ((!isWordBoundary(cursor.peek()) && !isEscaped) || isEscaped )) {
-            char c = cursor.peek();
-            if(c == '^') {
-                if(this.isEscaped) {
-                    word += c;
-                    isEscaped = false;
-                }
-                else {
-                    isEscaped = true;
-                }
-            }
-            else {
-                word += c;
-                isEscaped = false;
-            }
+            Type.Pchar pChar = cursor.peek();
+            word += pChar.c;
             // consume
             cursor.advance();
         }
-
 
         this.tokens.add(new Type.Token(word, Type.TokenType.TEXT));
     }
@@ -378,32 +329,32 @@ public class Scanner {
         return false;
     }
 
+    public boolean isBlank(Type.Pchar p) {
+        return p != null && isBlank(p.c);
+    }
+
+    public boolean isSpace(Type.Pchar p) {
+        return p != null && isSpace(p.c);
+    }
+
+    public boolean isWordBoundary(Type.Pchar p) {
+        return p != null && !p.isEscaped && isWordBoundary(p.c);
+    }
+
     public void collectSingleQuote() {
         StringBuilder word = new StringBuilder();
 
         boolean hasClosed = false;
 
         while (!cursor.isEnd()) {
-            char c = cursor.peek();
+            Type.Pchar pChar = cursor.peek();
 
-            if (c == '\'' && !isEscaped) {
+            if (pChar.c == '\'' && !pChar.isEscaped) {
                 hasClosed = true;
                 cursor.advance();
                 break;
             }
-
-            if (c == '^') {
-                if (this.isEscaped) {
-                    word.append(c);
-                    isEscaped = false;
-                } else {
-                    isEscaped = true;
-                }
-            } else {
-                word.append(c);
-                isEscaped = false;
-            }
-
+            word.append(pChar);
             cursor.advance();
         }
 
@@ -419,9 +370,9 @@ public class Scanner {
         boolean hasClosed = false;
 
         while (!cursor.isEnd()) {
-            char c = cursor.peek();
+            Type.Pchar pChar = cursor.peek();
 
-            if (c == '`' && !isEscaped) {
+            if (pChar.c == '`' && !pChar.isEscaped) {
                 if(nestedCommandCounter == 0) {
                     hasClosed = true;
                     cursor.advance();
@@ -435,33 +386,20 @@ public class Scanner {
                 }
             }
 
-            if (c == '$' && !isEscaped) {
+            if (pChar.c == '$' && !pChar.isEscaped) {
                 cursor.advance();
                 word.append("$");
 
-                if (!cursor.isEnd() && cursor.peek() == '`') {
+                if (!cursor.isEnd() && cursor.peek().c == '`') {
                     cursor.advance();
                     word.append("`");
                     nestedCommandCounter++;
                 }
 
-                isEscaped = false;
                 continue;
             }
 
-            if (c == '^') {
-                if (this.isEscaped) {
-                    word.append(c);
-                    isEscaped = false;
-                } else {
-                    isEscaped = true;
-                }
-                cursor.advance();
-                continue;
-            }
-
-            word.append(c);
-            isEscaped = false;
+            word.append(pChar);
 
             cursor.advance();
         }
@@ -478,26 +416,15 @@ public class Scanner {
         StringBuilder lexeme = new StringBuilder();
         boolean hasClosed = false;
         while (!cursor.isEnd()) {
-            char c = cursor.peek();
+            Type.Pchar pChar = cursor.peek();
 
-            if (c == '"' && !isEscaped) {
+            if (pChar.c == '"' && !pChar.isEscaped) {
                 hasClosed = true;
                 cursor.advance();
                 break;
             }
 
-            if (c == '^') {
-                if (this.isEscaped) {
-                    lexeme.append(c);
-                    isEscaped = false;
-                } else {
-                    isEscaped = true;
-                }
-                cursor.advance();
-                continue;
-            }
-
-            if(isSpace(c)) {
+            if(isSpace(pChar)) {
                 if (!lexeme.isEmpty()) {
                     tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
                     lexeme.setLength(0);
@@ -505,7 +432,7 @@ public class Scanner {
 
                 // consume all blank as one token
                 while (!cursor.isEnd() && isSpace(cursor.peek())) {
-                    lexeme.append(cursor.advance());
+                    lexeme.append(cursor.advance().c);
                 }
 
                 tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
@@ -513,11 +440,11 @@ public class Scanner {
                 continue;
             }
 
-            if(c == '$' && !isEscaped)  {
+            if(pChar.c == '$' && !pChar.isEscaped)  {
                 tokens.add(new Type.Token("$", Type.TokenType.DOLLAR));
                 cursor.advance();
 
-                Type.TokenType type = switch (cursor.peek()) {
+                Type.TokenType type = switch (cursor.peek().c) {
                     case '{' -> Type.TokenType.LEFT_CURLY_BRACE;
                     case '}' -> Type.TokenType.RIGHT_CURLY_BRACE;
                     case '`' -> Type.TokenType.BACKTICK;
@@ -526,12 +453,12 @@ public class Scanner {
 
                 if (type != null) {
                     tokens.add(new Type.Token(String.valueOf(cursor.peek()), type));
-                    c =  cursor.advance();
+                    pChar =  cursor.advance();
 
                     // collect all variable/substitution body as atom
-                    if (c == '`') {
-                        while (!cursor.isEnd() && cursor.peek() != '`') {
-                            lexeme.append(cursor.advance());
+                    if (pChar.c == '`') {
+                        while (!cursor.isEnd() && cursor.peek().c != '`') {
+                            lexeme.append(cursor.advance().c);
                         }
 
                         if (!lexeme.isEmpty()) {
@@ -539,8 +466,8 @@ public class Scanner {
                             lexeme.setLength(0);
                         }
 
-                        char closing = cursor.advance();
-                        if(closing != '`') {
+                        Type.Pchar closing = cursor.advance();
+                        if(closing.c != '`') {
                             throw new YsharpException(
                                     YsharpException.YsharpErrorType.PROCESS,
                                     -1,
@@ -549,9 +476,9 @@ public class Scanner {
                         tokens.add(new Type.Token(String.valueOf("`"), Type.TokenType.BACKTICK));
 
                     }
-                    else if (c == '{') {
-                        while (!cursor.isEnd() && cursor.peek() != '}') {
-                            lexeme.append(cursor.advance());
+                    else if (pChar.c == '{') {
+                        while (!cursor.isEnd() && cursor.peek().c != '}') {
+                            lexeme.append(cursor.advance().c);
                         }
 
                         if (!lexeme.isEmpty()) {
@@ -559,8 +486,8 @@ public class Scanner {
                             lexeme.setLength(0);
                         }
 
-                        char closing = cursor.advance();
-                        if(closing != '}') {
+                        Type.Pchar closing = cursor.advance();
+                        if(closing.c != '}') {
                             throw new YsharpException(
                                     YsharpException.YsharpErrorType.PROCESS,
                                     -1,
@@ -570,17 +497,15 @@ public class Scanner {
 
                     }
 
-                    isEscaped = false;
                     continue;
                 }
 
-                isEscaped = false;
                 continue;
             }
 
-            if(c == '%' && !isEscaped) {
-                while (!cursor.isEnd() && cursor.peek() != '%') {
-                    lexeme.append(cursor.advance());
+            if(pChar.c == '%' && !pChar.isEscaped) {
+                while (!cursor.isEnd() && cursor.peek().c != '%') {
+                    lexeme.append(cursor.advance().c);
                 }
 
                 if (!lexeme.isEmpty()) {
@@ -588,8 +513,8 @@ public class Scanner {
                     lexeme.setLength(0);
                 }
 
-                char closing = cursor.advance();
-                if(closing != '%') {
+                Type.Pchar closing = cursor.advance();
+                if(closing.c != '%') {
                     throw new YsharpException(
                             YsharpException.YsharpErrorType.PROCESS,
                             -1,
@@ -597,24 +522,21 @@ public class Scanner {
                 }
                 tokens.add(new Type.Token(String.valueOf("%"), Type.TokenType.PERCENT));
 
-                isEscaped = false;
                 continue;
             }
 
-            if (c == '~') {
-                if (this.isEscaped) {
-                    lexeme.append(c);
+            if (pChar.c == '~') {
+                if (pChar.isEscaped) {
+                    lexeme.append(pChar.c);
                 } else {
                     tokens.add(new Type.Token("~", Type.TokenType.TILDE));
                 }
 
-                isEscaped = false;
                 cursor.advance();
                 continue;
             }
 
-            isEscaped = false;
-            lexeme.append(c);
+            lexeme.append(pChar.c);
             cursor.advance();
         }
 
