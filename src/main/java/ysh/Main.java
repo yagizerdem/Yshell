@@ -7,26 +7,32 @@ public class Main {
 
         // REPL.start();
 
-        Context ctx = Context.getContext();
-        ctx.env.setVariable("abc" , "erdem");
+       try {
+           Context ctx = Context.getContext();
+           ctx.env.setVariable("abc" , "erdem");
 
-        String cmd = "echo ~~yagi%abc%z $abc 'def' erd~em > %abc%";
-        Scanner scanner = new Scanner(cmd);
-        scanner.scanAll();
-        Parser parser = new Parser(scanner.tokens);
-        List<Type.AstNode> nodes = parser.parse();
-        AstReducer.AstReducerVisitor reducer = new AstReducer.AstReducerVisitor(nodes);
-        reducer.vectorizeAll();
+           String cmd = "echo ^~~yagi^%abc^%z $abc 'def' erd~em > %abc%";
+           List<Type.Pchar> processed = Preprocess.preprocess(cmd);
 
-        List<Type.BaseCommand> commands = reducer.vectorizedCommands;
+           Scanner scanner = new Scanner(processed);
+           scanner.scanAll();
+           Parser parser = new Parser(scanner.tokens);
+           List<Type.AstNode> nodes = parser.parse();
+           AstReducer.AstReducerVisitor reducer = new AstReducer.AstReducerVisitor(nodes);
+           reducer.vectorizeAll();
 
-        Expansion expansion = new Expansion();
-        for(Type.BaseCommand command : commands) {
-            command.variableSubstitution(expansion);
-            command.tildeSubstitution(expansion);
-        }
+           List<Type.BaseCommand> commands = reducer.vectorizedCommands;
 
-        int a = 10;
+           Expansion expansion = new Expansion();
+           for(Type.BaseCommand command : commands) {
+               command.variableSubstitution(expansion);
+               command.tildeSubstitution(expansion);
+           }
+
+           int a = 10;
+       }catch (Exception ex) {
+           System.out.println(ex.getMessage());
+       }
 
     }
 }

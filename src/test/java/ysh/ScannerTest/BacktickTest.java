@@ -2,6 +2,7 @@ package ysh.ScannerTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import ysh.Preprocess;
 import ysh.Scanner;
 import ysh.Type;
 import ysharp.treewalk.YsharpException;
@@ -12,7 +13,7 @@ public class BacktickTest {
 
     @Test
     void simpleBackTick() {
-        Scanner scanner = new Scanner("echo $`cmd 1` sudenaz yetkin");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`cmd 1` sudenaz yetkin"));
         scanner.scanAll();
 
         Assertions.assertEquals(scanner.tokens.get(0).type, Type.TokenType.TEXT);
@@ -47,7 +48,7 @@ public class BacktickTest {
 
     @Test
     void emptyBacktick() {
-        Scanner scanner = new Scanner("echo $``");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $``"));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.TEXT, scanner.tokens.get(0).type);
@@ -67,7 +68,7 @@ public class BacktickTest {
 
     @Test
     void backtickWithoutSpaceAfter() {
-        Scanner scanner = new Scanner("echo $`cmd`abc");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`cmd`abc"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -84,7 +85,7 @@ public class BacktickTest {
 
     @Test
     void backtickWithoutSpaceBefore() {
-        Scanner scanner = new Scanner("echo a$`cmd`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo a$`cmd`"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -101,7 +102,7 @@ public class BacktickTest {
 
     @Test
     void backtickWithMultipleSpacesInside() {
-        Scanner scanner = new Scanner("echo $`cmd    1     2`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`cmd    1     2`"));
         scanner.scanAll();
 
         assertEquals("cmd    1     2", scanner.tokens.get(4).lexeme);
@@ -110,7 +111,7 @@ public class BacktickTest {
 
     @Test
     void backtickWithNewlineInside() {
-        Scanner scanner = new Scanner("echo $`echo a\necho b`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`echo a\necho b`"));
         scanner.scanAll();
 
         assertEquals("echo a\necho b", scanner.tokens.get(4).lexeme);
@@ -119,7 +120,7 @@ public class BacktickTest {
 
     @Test
     void backtickWithSemicolonInside() {
-        Scanner scanner = new Scanner("echo $`echo a; echo b`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`echo a; echo b`"));
         scanner.scanAll();
 
         assertEquals("echo a; echo b", scanner.tokens.get(4).lexeme);
@@ -128,7 +129,7 @@ public class BacktickTest {
 
     @Test
     void backtickWithPipeInside() {
-        Scanner scanner = new Scanner("echo $`cat file.txt | grep test`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`cat file.txt | grep test`"));
         scanner.scanAll();
 
         assertEquals("cat file.txt | grep test", scanner.tokens.get(4).lexeme);
@@ -137,7 +138,7 @@ public class BacktickTest {
 
     @Test
     void backtickWithQuotesInside() {
-        Scanner scanner = new Scanner("echo $`echo \"hello world\"`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`echo \"hello world\"`"));
         scanner.scanAll();
 
         assertEquals("echo \"hello world\"", scanner.tokens.get(4).lexeme);
@@ -146,7 +147,7 @@ public class BacktickTest {
 
     @Test
     void backtickWithSingleQuotesInside() {
-        Scanner scanner = new Scanner("echo $`echo 'hello world'`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`echo 'hello world'`"));
         scanner.scanAll();
 
         assertEquals("echo 'hello world'", scanner.tokens.get(4).lexeme);
@@ -155,7 +156,7 @@ public class BacktickTest {
 
     @Test
     void escapedBacktickInsideBacktick() {
-        Scanner scanner = new Scanner("echo $`echo \\^`test\\^``");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`echo \\^`test\\^``"));
         scanner.scanAll();
 
         assertEquals("echo \\`test\\`", scanner.tokens.get(4).lexeme);
@@ -164,7 +165,7 @@ public class BacktickTest {
 
     @Test
     void nestedBacktickRawText() {
-        Scanner scanner = new Scanner("echo $`echo $`inner``");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`echo $`inner``"));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.DOLLAR, scanner.tokens.get(2).type);
@@ -176,7 +177,7 @@ public class BacktickTest {
 
     @Test
     void twoBackticksInSameLine() {
-        Scanner scanner = new Scanner("echo $`one` $`two`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`one` $`two`"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -200,14 +201,14 @@ public class BacktickTest {
     @Test
     void unclosedBacktickShouldThrow() {
         assertThrows(RuntimeException.class, () -> {
-            Scanner scanner = new Scanner("echo $`cmd 1");
+            Scanner scanner = new Scanner(Preprocess.preprocess("echo $`cmd 1"));
             scanner.scanAll();
         });
     }
 
     @Test
     void dollarWithoutBacktickShouldNotStartSubstitution() {
-        Scanner scanner = new Scanner("echo $abc");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $abc"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -221,7 +222,7 @@ public class BacktickTest {
 
     @Test
     void nestedBacktickWithTextAfterInner() {
-        Scanner scanner = new Scanner("echo $`a $`b` c`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`a $`b` c`"));
         scanner.scanAll();
 
         assertEquals("a $`b` c", scanner.tokens.get(4).lexeme);
@@ -230,7 +231,7 @@ public class BacktickTest {
 
     @Test
     void doubleNestedBacktick() {
-        Scanner scanner = new Scanner("echo $`a $`b $`c` d` e`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`a $`b $`c` d` e`"));
         scanner.scanAll();
 
         assertEquals("a $`b $`c` d` e", scanner.tokens.get(4).lexeme);
@@ -239,14 +240,14 @@ public class BacktickTest {
     @Test
     void unclosedNestedBacktickShouldThrow() {
         assertThrows(RuntimeException.class, () -> {
-            Scanner scanner = new Scanner("echo $`a $`b`");
+            Scanner scanner = new Scanner(Preprocess.preprocess("echo $`a $`b`"));
             scanner.scanAll();
         });
     }
 
     @Test
     void escapedDollarBeforeNestedBacktickShouldNotNest() {
-        Scanner scanner = new Scanner("echo $`echo ^$`inner``");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`echo ^$`inner``"));
         scanner.scanAll();
 
         assertEquals("echo $", scanner.tokens.get(4).lexeme);
@@ -256,7 +257,7 @@ public class BacktickTest {
 
     @Test
     void escapedBacktickDoesNotCloseOuter() {
-        Scanner scanner = new Scanner("echo $`a ^` b`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`a ^` b`"));
         scanner.scanAll();
 
         assertEquals("a ` b", scanner.tokens.get(4).lexeme);
@@ -264,17 +265,17 @@ public class BacktickTest {
 
     @Test
     void danglingEscapeAtEndInsideBacktick() {
-       assertThrows(YsharpException.class, () -> {
-           Scanner scanner = new Scanner("echo $`abc^`");
-           scanner.scanAll();
+        assertThrows(YsharpException.class, () -> {
+            Scanner scanner = new Scanner(Preprocess.preprocess("echo $`abc^`"));
+            scanner.scanAll();
 
-           assertEquals("abc", scanner.tokens.get(4).lexeme);
-       });
+            assertEquals("abc", scanner.tokens.get(4).lexeme);
+        });
     }
 
     @Test
     void onlyNestedCommandInsideBacktick() {
-        Scanner scanner = new Scanner("echo $`$`inner``");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`$`inner``"));
         scanner.scanAll();
 
         assertEquals("$`inner`", scanner.tokens.get(4).lexeme);
@@ -282,7 +283,7 @@ public class BacktickTest {
 
     @Test
     void backtickInsideSingleQuotesShouldNotStartCommandSubstitution() {
-        Scanner scanner = new Scanner("echo '$`cmd`'");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo '$`cmd`'"));
         scanner.scanAll();
 
         assertEquals("echo", scanner.tokens.get(0).lexeme);
@@ -304,7 +305,7 @@ public class BacktickTest {
 
     @Test
     void backtickInsideDoubleQuotesDependsOnYourDesign() {
-        Scanner scanner = new Scanner("echo \"$`cmd`\"");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo \"$`cmd`\""));
         scanner.scanAll();
         assertEquals(Type.TokenType.WORD_BREAK, scanner.tokens.get(1).type);
         assertEquals(Type.TokenType.DOUBLE_QUOTE, scanner.tokens.get(2).type);
@@ -318,7 +319,7 @@ public class BacktickTest {
 
     @Test
     void tripleNestedBacktickRawText() {
-        Scanner scanner = new Scanner("echo $`a $`b $`c $`d` e` f` g`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`a $`b $`c $`d` e` f` g`"));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.DOLLAR, scanner.tokens.get(2).type);
@@ -330,7 +331,7 @@ public class BacktickTest {
 
     @Test
     void quadrupleNestedBacktickRawText() {
-        Scanner scanner = new Scanner("echo $`a $`b $`c $`d $`e` f` g` h` i`");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`a $`b $`c $`d $`e` f` g` h` i`"));
         scanner.scanAll();
 
         assertEquals(Type.TokenType.DOLLAR, scanner.tokens.get(2).type);
@@ -342,7 +343,7 @@ public class BacktickTest {
 
     @Test
     void tripleNestedOnlyCommands() {
-        Scanner scanner = new Scanner("echo $`$`$`$`inner````");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`$`$`$`inner````"));
         scanner.scanAll();
 
         assertEquals("$`$`$`inner```", scanner.tokens.get(4).lexeme);
@@ -351,7 +352,7 @@ public class BacktickTest {
 
     @Test
     void quadrupleNestedOnlyCommands() {
-        Scanner scanner = new Scanner("echo $`$`$`$`$`inner`````");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`$`$`$`$`inner`````"));
         scanner.scanAll();
 
         assertEquals("$`$`$`$`inner````", scanner.tokens.get(4).lexeme);
@@ -360,7 +361,7 @@ public class BacktickTest {
 
     @Test
     void tripleNestedWithTextAfterEveryLevel() {
-        Scanner scanner = new Scanner("echo $`L1 $`L2 $`L3 $`L4` after4` after3` after2` after1");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`L1 $`L2 $`L3 $`L4` after4` after3` after2` after1"));
         scanner.scanAll();
 
         assertEquals("L1 $`L2 $`L3 $`L4` after4` after3` after2", scanner.tokens.get(4).lexeme);
@@ -370,7 +371,7 @@ public class BacktickTest {
 
     @Test
     void quadrupleNestedWithTextAfterEveryLevel() {
-        Scanner scanner = new Scanner("echo $`A $`B $`C $`D $`E` d` c` b` a` tail");
+        Scanner scanner = new Scanner(Preprocess.preprocess("echo $`A $`B $`C $`D $`E` d` c` b` a` tail"));
         scanner.scanAll();
 
         assertEquals("A $`B $`C $`D $`E` d` c` b` a", scanner.tokens.get(4).lexeme);
@@ -381,7 +382,7 @@ public class BacktickTest {
     @Test
     void unclosedTripleNestedBacktickShouldThrow() {
         assertThrows(RuntimeException.class, () -> {
-            Scanner scanner = new Scanner("echo $`a $`b $`c` d`");
+            Scanner scanner = new Scanner(Preprocess.preprocess("echo $`a $`b $`c` d`"));
             scanner.scanAll();
         });
     }
@@ -389,7 +390,7 @@ public class BacktickTest {
     @Test
     void unclosedQuadrupleNestedBacktickShouldThrow() {
         assertThrows(RuntimeException.class, () -> {
-            Scanner scanner = new Scanner("echo $`a $`b $`c $`d` e` f`");
+            Scanner scanner = new Scanner(Preprocess.preprocess("echo $`a $`b $`c $`d` e` f`"));
             scanner.scanAll();
         });
     }

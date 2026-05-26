@@ -162,4 +162,5 @@ public class Expansion {
             visitor.visitWord(redirection.filename);
         }
     }
+
 }

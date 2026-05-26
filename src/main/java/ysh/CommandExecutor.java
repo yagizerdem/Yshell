@@ -351,7 +351,7 @@ public class CommandExecutor {
             }
 
             String assignment = command.args.get(1);
-            Cursor cur = new Cursor(assignment);
+            Cursor cur = new Cursor(Preprocess.preprocess(assignment));
 
             StringBuilder identifierPart = new StringBuilder();
             StringBuilder valuePart = new StringBuilder();
@@ -364,7 +364,7 @@ public class CommandExecutor {
                 );
             }
 
-            if (cur.peek() == '=') {
+            if (cur.peek().c == '=') {
                 throw new YsharpException(
                         YsharpException.YsharpErrorType.PROCESS,
                         -1,
@@ -372,7 +372,7 @@ public class CommandExecutor {
                 );
             }
 
-            char first = cur.peek();
+            Type.Pchar first = cur.peek();
 
             if (!cur.isAlphaOrUnderscore(first)) {
                 throw new YsharpException(
@@ -383,18 +383,18 @@ public class CommandExecutor {
             }
 
             while (!cur.isEnd()) {
-                char c = cur.peek();
+                Type.Pchar pChar = cur.peek();
 
-                if (c == '=') {
+                if (pChar.c == '=') {
                     cur.advance();
                     break;
                 }
 
-                if (!cur.isAlphaNumericOrUnderscore(c)) {
+                if (!cur.isAlphaNumericOrUnderscore(pChar)) {
                     throw new YsharpException(
                             YsharpException.YsharpErrorType.PROCESS,
                             -1,
-                            "set: invalid variable name: character '" + c + "' is not allowed"
+                            "set: invalid variable name: character '" + pChar.c + "' is not allowed"
                     );
                 }
 
@@ -409,7 +409,7 @@ public class CommandExecutor {
                 );
             }
 
-            if (cur.prev() != '=') {
+            if (cur.prev().c != '=') {
                 throw new YsharpException(
                         YsharpException.YsharpErrorType.PROCESS,
                         -1,
