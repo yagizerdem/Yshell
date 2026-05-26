@@ -172,24 +172,30 @@ public class Parser {
                     "Expected word");
         }
 
+        if(peek().type == Type.TokenType.TILDE) {
+            hasTildeExpansion = true;
+            advance();
+        }
+
         while (!isEnd() && isWordStart(peek().type)) {
             if(peek().type == Type.TokenType.PERCENT) {
                 advance();
                 parts.add(new Type.VariableWord(advance()));
                 consume(Type.TokenType.PERCENT, "missing closing %");
-                consumeWordBreak();
             }
             else if(peek().type == Type.TokenType.DOLLAR) {
                 advance();
                 if(match(Type.TokenType.LEFT_CURLY_BRACE)) {
                     parts.add(new Type.VariableWord(advance()));
-                    consume(Type.TokenType.RIGHT_PAREN, "missing closing }");
+                    consume(Type.TokenType.RIGHT_CURLY_BRACE, "missing closing }");
                 }
                 else if(match(Type.TokenType.BACKTICK)) {
                     parts.add(new Type.ShellCommandWord(advance()));
                     consume(Type.TokenType.BACKTICK, "missing closing `");
                 }
-                consumeWordBreak();
+                else if(check(Type.TokenType.TEXT)) {
+                    parts.add(new Type.VariableWord(advance()));
+                }
             }
             else if(peek().type == Type.TokenType.DOUBLE_QUOTE) {
                 List<Type.WordPart> wordParts = new ArrayList<>();
@@ -224,16 +230,11 @@ public class Parser {
                 }
                 parts.add(new Type.DoublequotedWord(wordParts));
                 consume(Type.TokenType.DOUBLE_QUOTE, "missing closing double quote \"");
-                consumeWordBreak();
             }
             else if(peek().type == Type.TokenType.SINGLE_QUOTE) {
                 advance();
                 parts.add(new Type.SinglequotedWord(advance()));
                 consume(Type.TokenType.SINGLE_QUOTE, "missing closing single quote \'");
-                consumeWordBreak();
-            }
-            else if(peek().type == Type.TokenType.TILDE) {
-                hasTildeExpansion = true;
             }
             else {
                 // unquoted
