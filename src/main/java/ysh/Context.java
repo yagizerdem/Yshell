@@ -7,39 +7,54 @@ import java.util.HashMap;
 
 public class Context {
 
-    private static Context instance = null;
+    private static Context root = null;
 
+    public static Context active;
     public Path cwd;
 
     public Environment env;
 
     public Interpreter interpreter;
 
+    public Context enclosing;
+
     public int exitStatus;
+
+    public ShellSettings settings;
 
     private Context() {
         this.env = new Environment();
         this.interpreter = new Interpreter();
         this.cwd = Path.of(System.getProperty("user.dir"));
         this.exitStatus = 0;
+        this.settings = ShellSettings.defaults();
     }
 
-    public Context deepCopy() {
+    public static Context deepCopy() {
         Context ctx = new Context();
         return ctx;
     }
 
-    public Context getScoped() {
-        Context ctx = this.deepCopy();
-        ctx.env.enclosing = this.env;
+    public static Context getScoped() {
+        Context ctx = Context.deepCopy();
+        ctx.enclosing = Context.getContext();
         return ctx;
     }
 
+    public Context getParent() {
+        return this.enclosing;
+    }
+
     public static Context getContext() {
-        if(Context.instance == null) {
-            Context.instance = new Context();
+        if(Context.root == null) {
+            Context.root = new Context();
         }
-        return Context.instance;
+
+        if(Context.active != null) {
+            return Context.active;
+        }
+
+        return Context.root;
     }
 
     public void setExitStatus(int existStatus) {
@@ -48,32 +63,17 @@ public class Context {
     public static class Environment {
         private HashMap<String, String> variables = new HashMap<>();
 
-        public Environment enclosing = null;
         public  Environment() {}
 
         public void setVariable(String identifier, String value) {
             variables.put(identifier, value);
         }
 
-        public void setVariableRecursive(String identifier, String value) {
-            if (variables.containsKey(identifier)) {
-                variables.put(identifier, value);
-                return;
-            }
-
-            if (enclosing != null) {
-                enclosing.setVariableRecursive(identifier, value);
-                return;
-            }
-
-            variables.put(identifier, value);
-        }
-
         public boolean hasVariableRecursive(String identifier) {
             if (variables.containsKey(identifier)) return true;
-
-            if (enclosing != null) {
-                return enclosing.hasVariableRecursive(identifier);
+            Context ctx = Context.getContext();
+            if (ctx.enclosing != null) {
+                return ctx.enclosing.env.hasVariableRecursive(identifier);
             }
 
             return false;
@@ -96,9 +96,9 @@ public class Context {
             if (variables.containsKey(identifier)) {
                 return variables.get(identifier);
             }
-
-            if (enclosing != null) {
-                return enclosing.getVariableRecursiveOrDefault(identifier, defaultVal);
+            Context ctx = Context.getContext();
+            if (ctx.enclosing != null) {
+                return ctx.enclosing.env.getVariableRecursiveOrDefault(identifier, defaultVal);
             }
 
             return defaultVal;
@@ -115,4 +115,18 @@ public class Context {
         }
     }
 
+    public static final class ShellSettings {
+        public boolean interactive = false;
+        public boolean echoCommands = false;
+        public boolean stopOnError = false;
+
+        public boolean captureStdout = false;
+        public boolean captureStderr = false;
+        public boolean mergeStderrToStdout = false;
+        public boolean printOutput = true;
+
+        public static ShellSettings defaults() {
+            return new ShellSettings();
+        }
+    }
 }
