@@ -283,6 +283,13 @@ public class Expansion {
                 for(Type.WordPart part : node.parts) {
                     part.accept(this);
                 }
+
+                if(hasGlobMetaChar) {
+                    node.hasGlobExpansion = true;
+                    CommandResolver.WordAssemblerVisitor resolver = new CommandResolver.WordAssemblerVisitor();
+                    String globPattern = node.accept(resolver);
+
+                }
                 return null;
             }
 
@@ -294,7 +301,10 @@ public class Expansion {
             @Override
             public Void visitUnquotedWord(Type.UnquotedWord node) {
                 for(Type.Pchar pChar : node.word.rawLexeme) {
-                    //if(!pChar.isEscaped && pChar.c)
+                    if(!pChar.isEscaped && globMetaChars.contains(pChar.c)) {
+                        hasGlobMetaChar = true;
+                        return null;
+                    }
                 }
                 return null;
             }

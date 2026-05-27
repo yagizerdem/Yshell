@@ -434,6 +434,10 @@ public class Type {
 
         public boolean hasTildeExpansion;
 
+        public boolean hasGlobExpansion = false;
+
+        public String globExpansion  = null;
+
         public Word() {
             this.parts = new ArrayList<>();
         }
