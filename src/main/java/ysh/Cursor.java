@@ -49,6 +49,18 @@ public class Cursor {
         }
     }
 
+    public Type.Pchar getChar(int position) {
+        return this.src.get(position);
+    }
+
+    public Type.Pchar getCharOrDefault(int position, Type.Pchar defaultValue) {
+        if (position < 0 || position >= this.src.size()) {
+            return defaultValue;
+        }
+
+        return this.src.get(position);
+    }
+
     public boolean isEnd() {
         return cursor >= this.src.size();
     }

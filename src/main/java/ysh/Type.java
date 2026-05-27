@@ -18,6 +18,8 @@ public class Type {
 
         void commandSubstitution(Expansion expansion);
 
+        void globSubstitution(Expansion expansion);
+
         void resolve(CommandResolver resolver);
     }
 
@@ -75,6 +77,9 @@ public class Type {
         }
 
         @Override
+        public void globSubstitution(Expansion expansion) { expansion.GlobSubstitution(this); }
+
+        @Override
         public void resolve(CommandResolver resolver) {
             resolver.Resolve(this);
         }
@@ -117,6 +122,13 @@ public class Type {
         public void commandSubstitution(Expansion expansion) {
             for(BaseCommand command : this.commands) {
                 command.commandSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void globSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.globSubstitution(expansion);
             }
         }
 
@@ -189,6 +201,16 @@ public class Type {
         }
 
         @Override
+        public void globSubstitution(Expansion expansion) {
+            command.globSubstitution(expansion);
+            ConditionalCommand cur = this.chainCommand;
+            while (cur != null && cur.command != null) {
+                cur.globSubstitution(expansion);
+                cur = cur.chainCommand;
+            }
+        }
+
+        @Override
         public void resolve(CommandResolver resolver) {
             command.resolve(resolver);
             ConditionalCommand cur = this.chainCommand;
@@ -236,6 +258,13 @@ public class Type {
         public void commandSubstitution(Expansion expansion) {
             for(BaseCommand command : this.commands) {
                 command.commandSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void globSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.globSubstitution(expansion);
             }
         }
 
@@ -293,11 +322,27 @@ public class Type {
     static public class Token {
         public String lexeme;
 
+        public List<Pchar> rawLexeme;
+
         public final TokenType type;
+
+        public String getRawLexemeAsString() {
+            StringBuilder builder = new StringBuilder();
+
+            rawLexeme.forEach(x -> builder.append(x.c));
+            return builder.toString();
+        }
 
         public Token(String lexeme, TokenType type) {
             this.lexeme = lexeme;
             this.type = type;
+            this.rawLexeme = new ArrayList<>();
+        }
+
+        public Token(String lexeme, TokenType type, List<Pchar> rawLexeme) {
+            this.lexeme = lexeme;
+            this.type = type;
+            this.rawLexeme = rawLexeme;
         }
     }
 
@@ -395,6 +440,10 @@ public class Type {
         public List<WordPart> parts;
 
         public boolean hasTildeExpansion;
+
+        public boolean hasGlobExpansion = false;
+
+        public List<String> globExpansionResult  = new ArrayList<>();
 
         public Word() {
             this.parts = new ArrayList<>();
