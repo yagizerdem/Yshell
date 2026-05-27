@@ -57,7 +57,6 @@ public class AstReducer  {
                 }
 
                 result.command = conditionalCommand;
-                this.vectorizedCommands.add(conditionalCommand);
             } else {
                 result.command = pipeline.command;
             }

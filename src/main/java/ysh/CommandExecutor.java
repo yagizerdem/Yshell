@@ -12,11 +12,20 @@ import java.util.List;
 
 public class CommandExecutor {
 
-    public void ExecuteCommand(Type.Command command) {
+    public Type.ExecuteCommandResponse ExecuteCommand(Type.Command command) {
+        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaultOptions();
+        return ExecuteCommand(command, options);
+    }
+
+    public Type.ExecuteCommandResponse ExecuteCommand(Type.Command command,
+                                                      Type.CommandExecutionOptions options) {
+        Type.ExecuteCommandResponse response = new Type.ExecuteCommandResponse();
         if(command.isBuiltIn) {
             ExecuteBuiltIn(command);
-            return;
+            return response;
         }
+        StringBuilder stdOut = new StringBuilder();
+        StringBuilder stdErr = new StringBuilder();
 
         try {
             ProcessBuilder pb =
@@ -28,7 +37,12 @@ public class CommandExecutor {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
+                    if(options.captureStdout) {
+                        stdOut.append(line);
+                    }
+                    else {
+                        System.out.println(line);
+                    }
                 }
             }
 
@@ -38,9 +52,21 @@ public class CommandExecutor {
             Context.getContext().setExitStatus(1);
             System.out.println(ex.getMessage());
         }
+
+        if(options.captureStdout) {
+            response.stdOut = stdOut.toString();
+        }
+
+        return response;
     }
 
-    public void ExecutePipe(Type.Pipe pipe) {
+    public Type.ExecuteCommandResponse ExecutePipe(Type.Pipe pipe) {
+        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaultOptions();
+        return ExecutePipe(pipe, options);
+    }
+
+    public Type.ExecuteCommandResponse ExecutePipe(Type.Pipe pipe, Type.CommandExecutionOptions options) {
+        Type.ExecuteCommandResponse response = new Type.ExecuteCommandResponse();
 
         try{
             List<Thread> threads = new ArrayList<>();
@@ -111,14 +137,22 @@ public class CommandExecutor {
             Context.getContext().setExitStatus(1);
             System.out.println(ex.getMessage());
         }
+
+        return response;
     }
 
-    public void ExecuteConditionalCommand(Type.ConditionalCommand chainCommand) {
-        chainCommand.execute(this);
+    public Type.ExecuteCommandResponse ExecuteConditionalCommand(Type.ConditionalCommand chainCommand) {
+        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaultOptions();
+        return ExecuteConditionalCommand(chainCommand, options);
+    }
+
+    public Type.ExecuteCommandResponse ExecuteConditionalCommand(Type.ConditionalCommand chainCommand, Type.CommandExecutionOptions options) {
+        Type.ExecuteCommandResponse response = new Type.ExecuteCommandResponse();
+        chainCommand.command.execute(this);
 
         int exitStatus = Context.getContext().exitStatus;
         if(chainCommand.chainCommand == null) {
-            return;
+            return response;
         }
         if(exitStatus == 0 && chainCommand.operator.type == Type.TokenType.AND_CONDITIONAL) {
             chainCommand.chainCommand.execute(this);
@@ -126,12 +160,20 @@ public class CommandExecutor {
         if(exitStatus != 0 && chainCommand.operator.type == Type.TokenType.OR_CONDITIONAL) {
             chainCommand.chainCommand.execute(this);
         }
+
+        return response;
     }
 
-    public void ExecuteGroupedCommand(Type.GroupedCommand groupedCommand) {
+    public Type.ExecuteCommandResponse ExecuteGroupedCommand(Type.GroupedCommand groupedCommand) {
+        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaultOptions();
+        return ExecuteGroupedCommand(groupedCommand, options);
+    }
+    public Type.ExecuteCommandResponse ExecuteGroupedCommand(Type.GroupedCommand groupedCommand, Type.CommandExecutionOptions options) {
+        Type.ExecuteCommandResponse response = new Type.ExecuteCommandResponse();
         for(Type.BaseCommand command : groupedCommand.commands) {
             command.execute(this);
         }
+        return response;
     }
     public void ExecuteBuiltIn(Type.Command command) {
         // command dispatcher util

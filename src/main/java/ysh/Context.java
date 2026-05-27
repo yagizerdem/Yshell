@@ -24,6 +24,17 @@ public class Context {
         this.exitStatus = 0;
     }
 
+    public Context deepCopy() {
+        Context ctx = new Context();
+        return ctx;
+    }
+
+    public Context getScoped() {
+        Context ctx = this.deepCopy();
+        ctx.env.enclosing = this.env;
+        return ctx;
+    }
+
     public static Context getContext() {
         if(Context.instance == null) {
             Context.instance = new Context();
@@ -37,10 +48,35 @@ public class Context {
     public static class Environment {
         private HashMap<String, String> variables = new HashMap<>();
 
+        public Environment enclosing = null;
         public  Environment() {}
 
         public void setVariable(String identifier, String value) {
             variables.put(identifier, value);
+        }
+
+        public void setVariableRecursive(String identifier, String value) {
+            if (variables.containsKey(identifier)) {
+                variables.put(identifier, value);
+                return;
+            }
+
+            if (enclosing != null) {
+                enclosing.setVariableRecursive(identifier, value);
+                return;
+            }
+
+            variables.put(identifier, value);
+        }
+
+        public boolean hasVariableRecursive(String identifier) {
+            if (variables.containsKey(identifier)) return true;
+
+            if (enclosing != null) {
+                return enclosing.hasVariableRecursive(identifier);
+            }
+
+            return false;
         }
 
         public void setVariableIfNotExists(String identifier, String value) {
@@ -50,6 +86,22 @@ public class Context {
                 );
             }
             variables.put(identifier, value);
+        }
+
+        public String getVariableRecursiveOrDefault(String identifier) {
+            return getVariableRecursiveOrDefault(identifier, null);
+        }
+
+        public String getVariableRecursiveOrDefault(String identifier, String defaultVal) {
+            if (variables.containsKey(identifier)) {
+                return variables.get(identifier);
+            }
+
+            if (enclosing != null) {
+                return enclosing.getVariableRecursiveOrDefault(identifier, defaultVal);
+            }
+
+            return defaultVal;
         }
 
         public String getVariableOrDefault(String identifier) {
