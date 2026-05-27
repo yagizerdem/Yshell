@@ -287,7 +287,7 @@ public class Expansion {
 
                 if(hasGlobMetaChar) {
                     node.hasGlobExpansion = true;
-                    CommandResolver.WordAssemblerVisitor resolver = new CommandResolver.WordAssemblerVisitor();
+                    WordAssemblerVisitor resolver = new WordAssemblerVisitor();
                     String globPattern = node.accept(resolver);
                     List<String> paths = Globber.expandGlob(globPattern);
                     node.globExpansionResult = paths;
@@ -340,6 +340,72 @@ public class Expansion {
             visitor.visitWord(redirection.filename);
             // reset flag
             visitor.hasGlobMetaChar = false;
+        }
+    }
+
+    // util
+    public static  final class WordAssemblerVisitor implements Visitor<String> {
+        @Override
+        public String  visitConditionalNode(Type.ConditionalNode node) {
+            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
+        }
+
+        @Override
+        public String visitPipelineNode(Type.PipelineNode node) {
+            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
+        }
+
+        @Override
+        public String visitCommandNode(Type.CommandNode node) {
+            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
+        }
+
+        @Override
+        public String visitGroupedCommandNode(Type.GroupedCommandNode node) {
+            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
+        }
+
+        @Override
+        public String visitWord(Type.Word node) {
+            StringBuilder builder = new StringBuilder();
+            for(Type.WordPart part : node.parts) {
+                builder.append(part.accept(this));
+            }
+            return builder.toString();
+        }
+
+        @Override
+        public String visitRedirection(Type.Redirection node) {
+            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
+        }
+
+        @Override
+        public String visitUnquotedWord(Type.UnquotedWord node) {
+            return node.word.lexeme;
+        }
+
+        @Override
+        public String visitSinglequotedWord(Type.SinglequotedWord node) {
+            return node.word.lexeme;
+        }
+
+        @Override
+        public String visitDoublequotedWord(Type.DoublequotedWord node) {
+            StringBuilder joinedParts = new StringBuilder();
+            for(Type.WordPart part : node.wordParts) {
+                joinedParts.append(part.accept(this));
+            }
+            return joinedParts.toString();
+        }
+
+        @Override
+        public String  visitShellCommandWord(Type.ShellCommandWord node) {
+            return node.word.lexeme;
+        }
+
+        @Override
+        public String visitVariableWord(Type.VariableWord node) {
+            return node.word.lexeme;
         }
     }
 }

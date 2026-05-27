@@ -20,87 +20,151 @@ public class CommandResolver {
         builtinRegistry.add("mkdir");
     }
 
-    public static  final class WordAssemblerVisitor implements Visitor<String> {
-        @Override
-        public String  visitConditionalNode(Type.ConditionalNode node) {
-            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
-        }
+    public void ResolveArgs(Type.Command command)   {
+        class NormalizeWordsVisitor implements Visitor<Void> {
 
-        @Override
-        public String visitPipelineNode(Type.PipelineNode node) {
-            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
-        }
+            public List<String> args = new ArrayList<>();
 
-        @Override
-        public String visitCommandNode(Type.CommandNode node) {
-            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
-        }
+            private StringBuilder builder = new StringBuilder();
 
-        @Override
-        public String visitGroupedCommandNode(Type.GroupedCommandNode node) {
-            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
-        }
-
-        @Override
-        public String visitWord(Type.Word node) {
-            StringBuilder builder = new StringBuilder();
-            for(Type.WordPart part : node.parts) {
-                builder.append(part.accept(this));
+            private boolean isSpace(char c) {
+                return  c == ' ' || c == '\t' || c == '\n';
             }
-            return builder.toString();
-        }
 
-        @Override
-        public String visitRedirection(Type.Redirection node) {
-            throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "WordAssembler expansion only works in word type nodes");
-        }
+            private boolean isQuoted = false;
 
-        @Override
-        public String visitUnquotedWord(Type.UnquotedWord node) {
-            return node.word.lexeme;
-        }
-
-        @Override
-        public String visitSinglequotedWord(Type.SinglequotedWord node) {
-            return node.word.lexeme;
-        }
-
-        @Override
-        public String visitDoublequotedWord(Type.DoublequotedWord node) {
-            StringBuilder joinedParts = new StringBuilder();
-            for(Type.WordPart part : node.wordParts) {
-                joinedParts.append(part.accept(this));
+            @Override
+            public Void visitConditionalNode(Type.ConditionalNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Normalize " +
+                        "words only works in word type nodes");
             }
-            return joinedParts.toString();
+
+            @Override
+            public Void visitPipelineNode(Type.PipelineNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Normalize " +
+                        "words only works in word type nodes");
+            }
+
+            @Override
+            public Void visitCommandNode(Type.CommandNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Normalize " +
+                        "words only works in word type nodes");
+            }
+
+            @Override
+            public Void visitGroupedCommandNode(Type.GroupedCommandNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Normalize " +
+                        "words only works in word type nodes");
+            }
+
+            @Override
+            public Void visitWord(Type.Word node) {
+
+                if(node.hasGlobExpansion) {
+                    node.globExpansionResult.forEach(path -> {
+                        args.add(path);
+                    });
+                    return null;
+                }
+
+                isQuoted = false;
+                for(Type.WordPart part : node.parts) {
+                    part.accept(this);
+                    isQuoted = false;
+                }
+                if(!builder.isEmpty()) {
+                    args.add(builder.toString());
+                }
+                return null;
+            }
+
+            @Override
+            public Void visitRedirection(Type.Redirection node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Command expansion " +
+                        "only works in word type nodes");
+
+            }
+
+            @Override
+            public Void visitUnquotedWord(Type.UnquotedWord node) {
+                for(int i = 0; i < node.word.lexeme.length(); i++) {
+                    if(isSpace(node.word.lexeme.charAt(i)) && !isQuoted) {
+                        args.add(builder.toString());
+                        builder.setLength(0);
+                    }
+                    else {
+                        builder.append(node.word.lexeme.charAt(i));
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            public Void visitSinglequotedWord(Type.SinglequotedWord node) {
+                isQuoted = true;
+                for(int i = 0; i < node.word.lexeme.length(); i++) {
+                    builder.append(node.word.lexeme.charAt(i));
+                }
+                isQuoted = false;
+                return null;
+            }
+
+            @Override
+            public Void visitDoublequotedWord(Type.DoublequotedWord node) {
+                isQuoted = true;
+                for(Type.WordPart part : node.wordParts) {
+                    part.accept(this);
+                }
+                isQuoted = false;
+                return null;
+            }
+
+            @Override
+            public Void visitShellCommandWord(Type.ShellCommandWord node) {
+                isQuoted = true;
+                for(int i = 0; i < node.word.lexeme.length(); i++) {
+                    builder.append(node.word.lexeme.charAt(i));
+                }
+                isQuoted = false;
+                return null;
+            }
+
+            @Override
+            public Void visitVariableWord(Type.VariableWord node) {
+                for(int i = 0; i < node.word.lexeme.length(); i++) {
+                    if(isSpace(node.word.lexeme.charAt(i)) && !isQuoted) {
+                        args.add(builder.toString());
+                        builder.setLength(0);
+                    }
+                    else {
+                        builder.append(node.word.lexeme.charAt(i));
+                    }
+                }
+                return null;
+            }
         }
 
-        @Override
-        public String  visitShellCommandWord(Type.ShellCommandWord node) {
-            return node.word.lexeme;
-        }
 
-        @Override
-        public String visitVariableWord(Type.VariableWord node) {
-            return node.word.lexeme;
-        }
-    }
-
-    public void WordAssembler(Type.Command command)   {
-        WordAssemblerVisitor visitor = new WordAssemblerVisitor();
         for(int i = 0; i < command.rawArgs.size(); i++) {
             Type.Word word = command.rawArgs.get(i);
-            command.args.add(word.accept(visitor));
+            NormalizeWordsVisitor normalize = new NormalizeWordsVisitor();
+            normalize.visitWord(word);
+            List<String> args = normalize.args;
+            command.args.addAll(args);
         }
     }
 
-    public void Resolve(Type.Command command) {
-        this.WordAssembler(command);
-
+    public void ResolveIsBuiltIn(Type.Command command) {
         if(!command.args.isEmpty()) {
             if(CommandResolver.builtinRegistry.contains(command.args.getFirst())) {
                 command.isBuiltIn = true;
             }
         }
+    }
+
+    public void Resolve(Type.Command command) {
+        this.ResolveArgs(command);
+        this.ResolveIsBuiltIn(command);
     }
 
 
