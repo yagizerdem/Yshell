@@ -1,5 +1,6 @@
 package ysh.natives;
 
+import ysh.Core;
 import ysharp.treewalk.YsharpException;
 import ysharp.treewalk.evaluator.Callable;
 import ysharp.treewalk.evaluator.Function;
@@ -21,8 +22,8 @@ public class Run  extends Function.NativeFunction  implements Callable {
             throws YsharpException {
 
         requireArity(arguments, arity(), getFnName());
-        String shellCommand = requireString(arguments.getFirst(), getFnName(), 1);
-
+        String shellScript = requireString(arguments.getFirst(), getFnName(), 1);
+        Core.ExecuteShellProgram(shellScript);
 
         return new Variable.Variant(null);
     }
