@@ -12,14 +12,14 @@ import java.util.List;
 
 public class CommandExecutor {
 
-    public Type.ExecuteCommandResponse ExecuteCommand(Type.Command command) {
-        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaultOptions();
+    public Type.CommandExecutionResponse ExecuteCommand(Type.Command command) {
+        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaults();
         return ExecuteCommand(command, options);
     }
 
-    public Type.ExecuteCommandResponse ExecuteCommand(Type.Command command,
+    public Type.CommandExecutionResponse ExecuteCommand(Type.Command command,
                                                       Type.CommandExecutionOptions options) {
-        Type.ExecuteCommandResponse response = new Type.ExecuteCommandResponse();
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         if(command.isBuiltIn) {
             ExecuteBuiltIn(command);
             return response;
@@ -60,13 +60,13 @@ public class CommandExecutor {
         return response;
     }
 
-    public Type.ExecuteCommandResponse ExecutePipe(Type.Pipe pipe) {
-        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaultOptions();
+    public Type.CommandExecutionResponse ExecutePipe(Type.Pipe pipe) {
+        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaults();
         return ExecutePipe(pipe, options);
     }
 
-    public Type.ExecuteCommandResponse ExecutePipe(Type.Pipe pipe, Type.CommandExecutionOptions options) {
-        Type.ExecuteCommandResponse response = new Type.ExecuteCommandResponse();
+    public Type.CommandExecutionResponse ExecutePipe(Type.Pipe pipe, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
 
         try{
             List<Thread> threads = new ArrayList<>();
@@ -141,13 +141,13 @@ public class CommandExecutor {
         return response;
     }
 
-    public Type.ExecuteCommandResponse ExecuteConditionalCommand(Type.ConditionalCommand chainCommand) {
-        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaultOptions();
+    public Type.CommandExecutionResponse ExecuteConditionalCommand(Type.ConditionalCommand chainCommand) {
+        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaults();
         return ExecuteConditionalCommand(chainCommand, options);
     }
 
-    public Type.ExecuteCommandResponse ExecuteConditionalCommand(Type.ConditionalCommand chainCommand, Type.CommandExecutionOptions options) {
-        Type.ExecuteCommandResponse response = new Type.ExecuteCommandResponse();
+    public Type.CommandExecutionResponse ExecuteConditionalCommand(Type.ConditionalCommand chainCommand, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         chainCommand.command.execute(this);
 
         int exitStatus = Context.getContext().exitStatus;
@@ -164,12 +164,12 @@ public class CommandExecutor {
         return response;
     }
 
-    public Type.ExecuteCommandResponse ExecuteGroupedCommand(Type.GroupedCommand groupedCommand) {
-        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaultOptions();
+    public Type.CommandExecutionResponse ExecuteGroupedCommand(Type.GroupedCommand groupedCommand) {
+        Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaults();
         return ExecuteGroupedCommand(groupedCommand, options);
     }
-    public Type.ExecuteCommandResponse ExecuteGroupedCommand(Type.GroupedCommand groupedCommand, Type.CommandExecutionOptions options) {
-        Type.ExecuteCommandResponse response = new Type.ExecuteCommandResponse();
+    public Type.CommandExecutionResponse ExecuteGroupedCommand(Type.GroupedCommand groupedCommand, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         for(Type.BaseCommand command : groupedCommand.commands) {
             command.execute(this);
         }

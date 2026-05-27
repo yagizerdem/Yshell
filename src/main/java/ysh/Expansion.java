@@ -213,8 +213,11 @@ public class Expansion {
 
             @Override
             public Void visitShellCommandWord(Type.ShellCommandWord node) {
-                Type.CommandExecutionOptions options = Type.CommandExecutionOptions.capture();
-//               Core.ExecuteShellProgram(node.word.lexeme, options);
+                Context parent = Context.getContext();
+                Context ctx = Context.getScoped();
+                Context.active = ctx;
+                Core.ExecuteShellProgram(node.word.lexeme);
+                Context.active = parent;
                 return null;
             }
 

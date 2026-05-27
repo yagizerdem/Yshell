@@ -10,6 +10,8 @@ public class Type {
     public interface BaseCommand {
         void execute(CommandExecutor executor);
 
+        void execute(CommandExecutor executor, CommandExecutionOptions options);
+
         void variableSubstitution(Expansion expansion);
 
         void tildeSubstitution(Expansion expansion);
@@ -51,6 +53,11 @@ public class Type {
         }
 
         @Override
+        public void execute(CommandExecutor executor, CommandExecutionOptions options) {
+            executor.ExecuteCommand(this, options);
+        }
+
+        @Override
         public void variableSubstitution(Expansion expansion) {
             expansion.VariableSubstitution(this);
         }
@@ -78,6 +85,11 @@ public class Type {
         @Override
         public void execute(CommandExecutor executor) throws YsharpException {
             executor.ExecutePipe(this);
+        }
+
+        @Override
+        public void execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
+            executor.ExecutePipe(this, options);
         }
 
         @Override
@@ -128,6 +140,11 @@ public class Type {
         }
 
         @Override
+        public void execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
+            executor.ExecuteConditionalCommand(this, options);
+        }
+
+        @Override
         public void variableSubstitution(Expansion expansion) {
             command.variableSubstitution(expansion);
             ConditionalCommand cur = this.chainCommand;
@@ -170,6 +187,11 @@ public class Type {
         @Override
         public void execute(CommandExecutor executor) throws YsharpException {
             executor.ExecuteGroupedCommand(this);
+        }
+
+        @Override
+        public void execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
+            executor.ExecuteGroupedCommand(this, options);
         }
 
         @Override
@@ -470,7 +492,7 @@ public class Type {
         }
     }
 
-    public static final class ExecuteCommandResponse {
+    public static final class CommandExecutionResponse {
         public String stdOut;
         public String stdErr;
     }
@@ -488,8 +510,13 @@ public class Type {
             return options;
         }
 
-        public static CommandExecutionOptions defaultOptions() {
+        public static CommandExecutionOptions defaults() {
             return new CommandExecutionOptions();
         }
+    }
+
+
+    public static final class ProgramExecutionOptions {
+
     }
 }
