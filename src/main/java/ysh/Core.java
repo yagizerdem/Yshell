@@ -4,13 +4,16 @@ import java.util.List;
 
 public class Core {
 
+
     public static Type.ProgramExecutionResponse ExecuteShellProgram(String program) {
+        Context context = Context.getContext();
+        return ExecuteShellProgram(program, context);
+    }
+    public static Type.ProgramExecutionResponse ExecuteShellProgram(String program, Context context) {
         Type.ProgramExecutionResponse response = new Type.ProgramExecutionResponse();
         response.stdOut = "";
         response.stdErr = "";
         try {
-            Context context = Context.getContext();
-
             Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaults();
             if(context.settings.captureStdout) {
                 options = Type.CommandExecutionOptions.capture();

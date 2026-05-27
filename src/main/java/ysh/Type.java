@@ -292,6 +292,7 @@ public class Type {
 
     static public class Token {
         public String lexeme;
+
         public final TokenType type;
 
         public Token(String lexeme, TokenType type) {
@@ -301,7 +302,7 @@ public class Type {
     }
 
     static public final class Pchar{
-        char c;
+        public char c;
         boolean isEscaped;
 
         public Pchar() {}
