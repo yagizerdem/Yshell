@@ -161,4 +161,77 @@ public class Expansion {
         }
     }
 
+    public void  CommandSubstitution(Type.Command command) {
+        class CommandSubstitutionVisitor implements Visitor<Void> {
+            @Override
+            public Void visitConditionalNode(Type.ConditionalNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Command expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitPipelineNode(Type.PipelineNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Command expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitCommandNode(Type.CommandNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Command expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitGroupedCommandNode(Type.GroupedCommandNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Command expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitWord(Type.Word node) {
+                for(Type.WordPart part : node.parts) {
+                    part.accept(this);
+                }
+                return null;
+            }
+
+            @Override
+            public Void visitRedirection(Type.Redirection node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Command expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitUnquotedWord(Type.UnquotedWord node) {
+                return null;
+            }
+
+            @Override
+            public Void visitSinglequotedWord(Type.SinglequotedWord node) {
+                return null;
+            }
+
+            @Override
+            public Void visitDoublequotedWord(Type.DoublequotedWord node) {
+                return null;
+            }
+
+            @Override
+            public Void visitShellCommandWord(Type.ShellCommandWord node) {
+                Type.CommandExecutionOptions options = Type.CommandExecutionOptions.capture();
+//               Core.ExecuteShellProgram(node.word.lexeme, options);
+                return null;
+            }
+
+            @Override
+            public Void visitVariableWord(Type.VariableWord node) {
+                return null;
+            }
+        }
+
+
+        CommandSubstitutionVisitor visitor = new CommandSubstitutionVisitor();
+        for(Type.Word word : command.rawArgs) {
+            visitor.visitWord(word);
+        }
+
+        for(Type.Redirection redirection : command.redirections) {
+            visitor.visitWord(redirection.filename);
+        }
+    }
 }

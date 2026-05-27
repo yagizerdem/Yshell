@@ -469,4 +469,27 @@ public class Type {
             return visitor.visitGroupedCommandNode(this);
         }
     }
+
+    public static final class ExecuteCommandResponse {
+        public String stdOut;
+        public String stdErr;
+    }
+
+    public static final class CommandExecutionOptions {
+        public boolean captureStdout = false;
+        public boolean captureStderr = false;
+        public boolean mergeStderrToStdout = false;
+        public boolean printOutput = true;
+
+        public static CommandExecutionOptions capture() {
+            CommandExecutionOptions options = new CommandExecutionOptions();
+            options.captureStdout = true;
+            options.printOutput = false;
+            return options;
+        }
+
+        public static CommandExecutionOptions defaultOptions() {
+            return new CommandExecutionOptions();
+        }
+    }
 }
