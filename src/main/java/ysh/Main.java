@@ -7,7 +7,7 @@ public class Main {
 
         // REPL.start();
 
-        String program = "echo hit";
+        String program = "\"echo hi{t\"";
 
         Core.ExecuteShellProgram(program);
 

@@ -39,6 +39,7 @@ public class Core {
                 command.variableSubstitution(expansion);
                 command.tildeSubstitution(expansion);
                 command.commandSubstitution(expansion);
+                command.globSubstitution(expansion);
 
                 // prepare command
                 command.resolve(commandResolver);

@@ -18,6 +18,8 @@ public class Type {
 
         void commandSubstitution(Expansion expansion);
 
+        void globSubstitution(Expansion expansion);
+
         void resolve(CommandResolver resolver);
     }
 
@@ -75,6 +77,9 @@ public class Type {
         }
 
         @Override
+        public void globSubstitution(Expansion expansion) { expansion.GlobSubstitution(this); }
+
+        @Override
         public void resolve(CommandResolver resolver) {
             resolver.Resolve(this);
         }
@@ -117,6 +122,13 @@ public class Type {
         public void commandSubstitution(Expansion expansion) {
             for(BaseCommand command : this.commands) {
                 command.commandSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void globSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.globSubstitution(expansion);
             }
         }
 
@@ -189,6 +201,16 @@ public class Type {
         }
 
         @Override
+        public void globSubstitution(Expansion expansion) {
+            command.globSubstitution(expansion);
+            ConditionalCommand cur = this.chainCommand;
+            while (cur != null && cur.command != null) {
+                cur.globSubstitution(expansion);
+                cur = cur.chainCommand;
+            }
+        }
+
+        @Override
         public void resolve(CommandResolver resolver) {
             command.resolve(resolver);
             ConditionalCommand cur = this.chainCommand;
@@ -236,6 +258,13 @@ public class Type {
         public void commandSubstitution(Expansion expansion) {
             for(BaseCommand command : this.commands) {
                 command.commandSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void globSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.globSubstitution(expansion);
             }
         }
 

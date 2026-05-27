@@ -68,7 +68,11 @@ public class CommandResolver {
 
             @Override
             public String visitDoublequotedWord(Type.DoublequotedWord node) {
-                return null;
+                StringBuilder joinedParts = new StringBuilder();
+                for(Type.WordPart part : node.wordParts) {
+                    joinedParts.append(part.accept(this));
+                }
+                return joinedParts.toString();
             }
 
             @Override

@@ -2,6 +2,8 @@ package ysh;
 
 import ysharp.treewalk.YsharpException;
 
+import java.util.List;
+
 public class Expansion {
 
     public void VariableSubstitution(Type.Command command) {
@@ -236,6 +238,86 @@ public class Expansion {
 
 
         CommandSubstitutionVisitor visitor = new CommandSubstitutionVisitor();
+        for(Type.Word word : command.rawArgs) {
+            visitor.visitWord(word);
+        }
+
+        for(Type.Redirection redirection : command.redirections) {
+            visitor.visitWord(redirection.filename);
+        }
+    }
+
+    public void GlobSubstitution(Type.Command command) {
+        class GlobSubstitutionVisitor implements Visitor<Void> {
+            public boolean hasGlobMetaChar = false;
+
+            List<Character> globMetaChars = List.of(
+                    '*',
+                    '?',
+                    '[',
+                    '{',
+                    '\\'
+            );
+            @Override
+            public Void visitConditionalNode(Type.ConditionalNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Glob expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitPipelineNode(Type.PipelineNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Glob expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitCommandNode(Type.CommandNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Glob expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitGroupedCommandNode(Type.GroupedCommandNode node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Glob expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitWord(Type.Word node) {
+                for(Type.WordPart part : node.parts) {
+                    part.accept(this);
+                }
+                return null;
+            }
+
+            @Override
+            public Void visitRedirection(Type.Redirection node) {
+                throw new YsharpException(YsharpException.YsharpErrorType.SEMANTIC, -1, "Glob expansion only works in word type nodes");
+            }
+
+            @Override
+            public Void visitUnquotedWord(Type.UnquotedWord node) {
+                for(Type.Pchar pChar : node.word.rawLexeme) {
+                    //if(!pChar.isEscaped && pChar.c)
+                }
+                return null;
+            }
+
+            @Override
+            public Void visitSinglequotedWord(Type.SinglequotedWord node) {
+                return null;
+            }
+
+            @Override
+            public Void visitDoublequotedWord(Type.DoublequotedWord node) {
+                return null;
+            }
+
+            @Override
+            public Void visitShellCommandWord(Type.ShellCommandWord node) { return null; }
+
+            @Override
+            public Void visitVariableWord(Type.VariableWord node) { return null; }
+        }
+
+
+        GlobSubstitutionVisitor visitor = new GlobSubstitutionVisitor();
         for(Type.Word word : command.rawArgs) {
             visitor.visitWord(word);
         }

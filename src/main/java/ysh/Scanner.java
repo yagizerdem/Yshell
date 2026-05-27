@@ -290,7 +290,7 @@ public class Scanner {
         String word = String.valueOf(cursor.prev().c);
         List<Type.Pchar> rawLiteral = new ArrayList<>();
         rawLiteral.add(cursor.prev());
-        while (!cursor.isEnd() && ((!isWordBoundary(cursor.peek()) && !isEscaped) || isEscaped )) {
+        while (!cursor.isEnd() && ((!isWordBoundary(cursor.cursor) && !isEscaped) || isEscaped )) {
             Type.Pchar pChar = cursor.peek();
             word += pChar.c;
             rawLiteral.add(pChar);
@@ -309,29 +309,36 @@ public class Scanner {
         return  c == ' ' || c == '\t' || c == '\n';
     }
 
-    public boolean isWordBoundary(char c) {
-        if(state != State.IN_DOUBLE_QUOTE) {
-            return isSpace(c)
-                    || c == ';'
-                    || c == '&'
-                    || c == '|'
-                    || c == '>'
-                    || c == '<'
-                    || c == '$'
-                    || c == '"'
-                    || c == '\''
-                    || c == '`'
-                    || c == '('
-                    || c == ')'
-                    || c == '{'
-                    || c == '}'
-                    || c == '%';
-        }
-        if(state == State.IN_DOUBLE_QUOTE) {
-            return isSpace(c) || c == '\"';
-        }
+    public boolean isWordBoundary(int cursorPosition) {
+        Type.Pchar pChar = this.cursor.getCharOrDefault(cursorPosition, null);
+        if(pChar == null || pChar.isEscaped) return false;
+        switch (pChar.c) {
+            case ';':
+            case '&':
+            case '|':
+            case '>':
+            case '<':
+            case '$':
+            case '"':
+            case '\'':
+            case '`':
+            case '(':
+            case ')':
+            case '%':
+                return true;
 
-        return false;
+            case '{':
+            case '}': {
+                if(cursorPosition - 1 > 0) {
+                    Type.Pchar prev = this.cursor.src.get(cursorPosition - 1);
+                    if(prev.c == '$' && !prev.isEscaped) return true;
+                }
+                return false;
+            }
+
+            default:
+                return isSpace(pChar);
+        }
     }
 
     public boolean isBlank(Type.Pchar p) {
@@ -342,9 +349,6 @@ public class Scanner {
         return p != null && isSpace(p.c);
     }
 
-    public boolean isWordBoundary(Type.Pchar p) {
-        return p != null && !p.isEscaped && isWordBoundary(p.c);
-    }
 
     public void collectSingleQuote() {
         StringBuilder word = new StringBuilder();
