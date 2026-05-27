@@ -7,6 +7,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,9 +21,10 @@ public class CommandExecutor {
     public Type.CommandExecutionResponse ExecuteCommand(Type.Command command,
                                                       Type.CommandExecutionOptions options) {
         Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
+        response.stdOut = "";
+        response.stdErr = "";
         if(command.isBuiltIn) {
-            ExecuteBuiltIn(command);
-            return response;
+            return ExecuteBuiltIn(command, options);
         }
         StringBuilder stdOut = new StringBuilder();
         StringBuilder stdErr = new StringBuilder();
@@ -175,58 +177,59 @@ public class CommandExecutor {
         }
         return response;
     }
-    public void ExecuteBuiltIn(Type.Command command) {
+
+    public Type.CommandExecutionResponse ExecuteBuiltIn(Type.Command command) {
+        return ExecuteBuiltIn(command, Type.CommandExecutionOptions.defaults());
+    }
+
+    public Type.CommandExecutionResponse ExecuteBuiltIn(Type.Command command, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         // command dispatcher util
         switch (command.args.getFirst()) {
             case "cd" :
             case "chdir" : {
-                ExecuteCd(command);
-                break;
+                return ExecuteCd(command, options);
             }
             case "echo" : {
-                ExecuteEcho(command);
-                break;
+                return ExecuteEcho(command, options);
             }
             case "exit" : {
-                ExecuteExit(command);
-                break;
+                return ExecuteExit(command, options);
             }
             case "dir":
             case "ls": {
-                ExecuteDir(command);
-                break;
+                return ExecuteDir(command, options);
             }
             case "set": {
-                ExecuteSet(command);
-                break;
+                return ExecuteSet(command, options);
             }
             case "mkdir" : {
-                ExecuteMkdir(command);
-                break;
+                return ExecuteMkdir(command, options);
             }
         }
+        return response;
     }
 
-    public void ExecuteCd(Type.Command command) {
-
+    public Type.CommandExecutionResponse ExecuteCd(Type.Command command, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         try {
             if(command.args.size() != 2) {
                 System.out.println("cd args should max size 2");
-                return;
+                return response;
             }
 
             String dest = command.args.get(1);
             Context context = Context.getContext();
 
             if(dest.equals(".")) {
-                return;
+                return response;
             }
 
             if(dest.equals("..")) {
                 Path parent = context.cwd.getParent();
 
                 if (parent == null) {
-                    return;
+                    return response;
                 }
 
                 if (!Files.exists(parent)) {
@@ -247,7 +250,7 @@ public class CommandExecutor {
 
                 context.cwd = parent;
                 System.setProperty("user.dir", context.cwd.toString());
-                return;
+                return response;
             }
 
             Path currentPath = context.cwd;
@@ -283,14 +286,17 @@ public class CommandExecutor {
             Context.getContext().setExitStatus(1);
             System.out.println(ex.getMessage());
         }
+        return response;
     }
 
-    public void ExecuteEcho(Type.Command command) {
+    public Type.CommandExecutionResponse ExecuteEcho(Type.Command command, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
+
         try {
             if (command.args.size() == 1) {
                 System.out.println();
                 Context.getContext().setExitStatus(0);
-                return;
+                return response;
             }
 
             StringBuilder builder = new StringBuilder();
@@ -303,20 +309,27 @@ public class CommandExecutor {
                 builder.append(command.args.get(i));
             }
 
-            System.out.println(builder.toString());
+            if(options.captureStdout) {
+                response.stdOut += builder.toString();
+            }
+            else {
+                System.out.println(builder.toString());
+            }
             Context.getContext().setExitStatus(0);
 
         } catch (Exception ex) {
             Context.getContext().setExitStatus(1);
             System.err.println(ex.getMessage());
         }
+        return response;
     }
 
-    public void ExecuteExit(Type.Command command) {
+    public Type.CommandExecutionResponse  ExecuteExit(Type.Command command, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         try {
             if(command.args.size() > 2) {
                 System.out.println("exit args should max size 2");
-                return;
+                return response;
             }
 
             int exitStatus = 0;
@@ -327,7 +340,7 @@ public class CommandExecutor {
                } catch (NumberFormatException ex) {
                    Context.getContext().setExitStatus(1);
                    System.out.println("exit: numeric argument required: " + status);
-                   return;
+                   return response;
                }
             }
             System.exit(exitStatus);
@@ -336,11 +349,12 @@ public class CommandExecutor {
             Context.getContext().setExitStatus(1);
             System.err.println(ex.getMessage());
         }
+        return response;
     }
 
-    public void ExecuteDir(Type.Command command) {
+    public Type.CommandExecutionResponse  ExecuteDir(Type.Command command, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         try {
-
             Context context = Context.getContext();
 
             if(command.args.size() == 1) {
@@ -349,7 +363,7 @@ public class CommandExecutor {
                 for(String entity : entities) {
                     System.out.println(entity);
                 }
-                return;
+                return response;
             }
 
             for(int i = 1; i < command.args.size(); i++) {
@@ -378,11 +392,12 @@ public class CommandExecutor {
             Context.getContext().setExitStatus(1);
             System.out.println(ex.getMessage());
         }
+        return response;
     }
 
-    public void ExecuteSet(Type.Command command) {
+    public Type.CommandExecutionResponse  ExecuteSet(Type.Command command, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         Context context = Context.getContext();
-
         try {
             if (command.args.size() != 2) {
                 throw new YsharpException(
@@ -474,9 +489,11 @@ public class CommandExecutor {
             context.setExitStatus(1);
             System.out.println(ex.getMessage());
         }
+        return response;
     }
 
-    public void ExecuteMkdir(Type.Command command) {
+    public Type.CommandExecutionResponse  ExecuteMkdir(Type.Command command, Type.CommandExecutionOptions options) {
+        Type.CommandExecutionResponse response = new Type.CommandExecutionResponse();
         Context context = Context.getContext();
 
         try {
@@ -542,5 +559,6 @@ public class CommandExecutor {
             context.setExitStatus(1);
             System.out.println(ex.getMessage());
         }
+        return  response;
     }
 }

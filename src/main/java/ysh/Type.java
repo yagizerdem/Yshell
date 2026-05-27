@@ -8,13 +8,15 @@ import java.util.List;
 public class Type {
 
     public interface BaseCommand {
-        void execute(CommandExecutor executor);
+        CommandExecutionResponse execute(CommandExecutor executor);
 
-        void execute(CommandExecutor executor, CommandExecutionOptions options);
+        CommandExecutionResponse execute(CommandExecutor executor, CommandExecutionOptions options);
 
         void variableSubstitution(Expansion expansion);
 
         void tildeSubstitution(Expansion expansion);
+
+        void commandSubstitution(Expansion expansion);
 
         void resolve(CommandResolver resolver);
     }
@@ -48,13 +50,13 @@ public class Type {
         }
 
         @Override
-        public void execute(CommandExecutor executor) throws YsharpException {
-            executor.ExecuteCommand(this);
+        public CommandExecutionResponse execute(CommandExecutor executor) throws YsharpException {
+            return executor.ExecuteCommand(this);
         }
 
         @Override
-        public void execute(CommandExecutor executor, CommandExecutionOptions options) {
-            executor.ExecuteCommand(this, options);
+        public CommandExecutionResponse execute(CommandExecutor executor, CommandExecutionOptions options) {
+            return executor.ExecuteCommand(this, options);
         }
 
         @Override
@@ -65,6 +67,11 @@ public class Type {
         @Override
         public void tildeSubstitution(Expansion expansion) {
             expansion.TildeSubstitution(this);
+        }
+
+        @Override
+        public void commandSubstitution(Expansion expansion) {
+            expansion.CommandSubstitution(this);
         }
 
         @Override
@@ -83,13 +90,13 @@ public class Type {
         }
 
         @Override
-        public void execute(CommandExecutor executor) throws YsharpException {
-            executor.ExecutePipe(this);
+        public CommandExecutionResponse execute(CommandExecutor executor) throws YsharpException {
+            return executor.ExecutePipe(this);
         }
 
         @Override
-        public void execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
-            executor.ExecutePipe(this, options);
+        public CommandExecutionResponse execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
+            return executor.ExecutePipe(this, options);
         }
 
         @Override
@@ -103,6 +110,13 @@ public class Type {
         public void tildeSubstitution(Expansion expansion) {
             for(BaseCommand command : this.commands) {
                 command.tildeSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void commandSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.commandSubstitution(expansion);
             }
         }
 
@@ -135,13 +149,13 @@ public class Type {
         }
 
         @Override
-        public void execute(CommandExecutor executor) throws YsharpException {
-            executor.ExecuteConditionalCommand(this);
+        public CommandExecutionResponse execute(CommandExecutor executor) throws YsharpException {
+            return executor.ExecuteConditionalCommand(this);
         }
 
         @Override
-        public void execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
-            executor.ExecuteConditionalCommand(this, options);
+        public CommandExecutionResponse execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
+            return executor.ExecuteConditionalCommand(this, options);
         }
 
         @Override
@@ -160,6 +174,16 @@ public class Type {
             ConditionalCommand cur = this.chainCommand;
             while (cur != null && cur.command != null) {
                 cur.tildeSubstitution(expansion);
+                cur = cur.chainCommand;
+            }
+        }
+
+        @Override
+        public void commandSubstitution(Expansion expansion) {
+            command.commandSubstitution(expansion);
+            ConditionalCommand cur = this.chainCommand;
+            while (cur != null && cur.command != null) {
+                cur.commandSubstitution(expansion);
                 cur = cur.chainCommand;
             }
         }
@@ -185,13 +209,13 @@ public class Type {
         }
 
         @Override
-        public void execute(CommandExecutor executor) throws YsharpException {
-            executor.ExecuteGroupedCommand(this);
+        public CommandExecutionResponse execute(CommandExecutor executor) throws YsharpException {
+            return executor.ExecuteGroupedCommand(this);
         }
 
         @Override
-        public void execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
-            executor.ExecuteGroupedCommand(this, options);
+        public CommandExecutionResponse execute(CommandExecutor executor, CommandExecutionOptions options) throws YsharpException {
+            return executor.ExecuteGroupedCommand(this, options);
         }
 
         @Override
@@ -205,6 +229,13 @@ public class Type {
         public void tildeSubstitution(Expansion expansion) {
             for(BaseCommand command : this.commands) {
                 command.tildeSubstitution(expansion);
+            }
+        }
+
+        @Override
+        public void commandSubstitution(Expansion expansion) {
+            for(BaseCommand command : this.commands) {
+                command.commandSubstitution(expansion);
             }
         }
 
@@ -495,6 +526,11 @@ public class Type {
     public static final class CommandExecutionResponse {
         public String stdOut;
         public String stdErr;
+
+        public CommandExecutionResponse() {
+            this.stdOut = "";
+            this.stdErr = "";
+        }
     }
 
     public static final class CommandExecutionOptions {
@@ -516,7 +552,13 @@ public class Type {
     }
 
 
-    public static final class ProgramExecutionOptions {
+    public static final class ProgramExecutionResponse {
+        public String stdOut;
+        public String stdErr;
 
+        public ProgramExecutionResponse() {
+            this.stdOut = "";
+            this.stdErr = "";
+        }
     }
 }

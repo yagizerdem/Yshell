@@ -215,9 +215,16 @@ public class Expansion {
             public Void visitShellCommandWord(Type.ShellCommandWord node) {
                 Context parent = Context.getContext();
                 Context ctx = Context.getScoped();
+                ctx.settings.captureStdout = true;
+                ctx.settings.captureStderr = true;
                 Context.active = ctx;
-                Core.ExecuteShellProgram(node.word.lexeme);
+                Type.ProgramExecutionResponse response = Core.ExecuteShellProgram(node.word.lexeme);
                 Context.active = parent;
+                if(response.stdOut != null && !response.stdOut.isEmpty()) {
+                    node.word.lexeme = response.stdOut;
+                }else {
+                    node.word.lexeme = "";
+                }
                 return null;
             }
 

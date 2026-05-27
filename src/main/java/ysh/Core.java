@@ -4,8 +4,18 @@ import java.util.List;
 
 public class Core {
 
-    public static void ExecuteShellProgram(String program) {
+    public static Type.ProgramExecutionResponse ExecuteShellProgram(String program) {
+        Type.ProgramExecutionResponse response = new Type.ProgramExecutionResponse();
+        response.stdOut = "";
+        response.stdErr = "";
         try {
+            Context context = Context.getContext();
+
+            Type.CommandExecutionOptions options = Type.CommandExecutionOptions.defaults();
+            if(context.settings.captureStdout) {
+                options = Type.CommandExecutionOptions.capture();
+            }
+
             List<Type.Pchar> processed = Preprocess.preprocess(program);
 
             Scanner scanner = new Scanner(processed);
@@ -25,15 +35,19 @@ public class Core {
                 // expansion
                 command.variableSubstitution(expansion);
                 command.tildeSubstitution(expansion);
+                command.commandSubstitution(expansion);
 
                 // prepare command
                 command.resolve(commandResolver);
 
                 // execution
-                command.execute(executor);
+                Type.CommandExecutionResponse commandResponse = command.execute(executor, options);
+                response.stdOut += commandResponse.stdOut;
+                response.stdErr += commandResponse.stdErr;
             }
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
+        return response;
     }
 }
