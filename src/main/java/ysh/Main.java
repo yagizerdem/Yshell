@@ -7,7 +7,7 @@ public class Main {
 
         // REPL.start();
 
-        String program = "set a='\t' & echo **/*.java";
+        String program = "set a='\t' & echo **/*.java & echo '\n' ; echo \"mother    fucker\"";
 
         Core.ExecuteShellProgram(program);
 
