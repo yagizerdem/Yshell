@@ -97,5 +97,7 @@ public class CommandResolver {
                 command.isBuiltIn = true;
             }
         }
+
+
     }
 }

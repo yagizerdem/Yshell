@@ -30,10 +30,12 @@ public class Scanner {
 
     private void addToken(Type.TokenType type) {
         StringBuilder lexeme = new StringBuilder();
+        List<Type.Pchar> rawLexeme = new ArrayList<>();
         for (int i = start; i < cursor.cursor; i++) {
             lexeme.append(cursor.src.get(i).c);
+            rawLexeme.add(cursor.src.get(i));
         }
-        this.tokens.add(new Type.Token(lexeme.toString(), type));
+        this.tokens.add(new Type.Token(lexeme.toString(), type, rawLexeme));
     }
 
     public void scanAll() {
@@ -286,14 +288,17 @@ public class Scanner {
     public void collectWord() {
         boolean isEscaped = this.cursor.peek().isEscaped;
         String word = String.valueOf(cursor.prev().c);
+        List<Type.Pchar> rawLiteral = new ArrayList<>();
+        rawLiteral.add(cursor.prev());
         while (!cursor.isEnd() && ((!isWordBoundary(cursor.peek()) && !isEscaped) || isEscaped )) {
             Type.Pchar pChar = cursor.peek();
             word += pChar.c;
+            rawLiteral.add(pChar);
             // consume
             cursor.advance();
         }
 
-        this.tokens.add(new Type.Token(word, Type.TokenType.TEXT));
+        this.tokens.add(new Type.Token(word, Type.TokenType.TEXT, rawLiteral));
     }
 
     public boolean isBlank(char c) {
@@ -343,7 +348,7 @@ public class Scanner {
 
     public void collectSingleQuote() {
         StringBuilder word = new StringBuilder();
-
+        List<Type.Pchar> rawLiteral = new ArrayList<>();
         boolean hasClosed = false;
 
         while (!cursor.isEnd()) {
@@ -355,6 +360,7 @@ public class Scanner {
                 break;
             }
             word.append(pChar);
+            rawLiteral.add(pChar);
             cursor.advance();
         }
 
@@ -362,11 +368,12 @@ public class Scanner {
             throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1 ,"Unclosed single quote");
         }
 
-        this.tokens.add(new Type.Token(word.toString(), Type.TokenType.TEXT));
+        this.tokens.add(new Type.Token(word.toString(), Type.TokenType.TEXT, rawLiteral));
     }
     public void collectBackTick() {
         int nestedCommandCounter = 0;
         StringBuilder word = new StringBuilder();
+        List<Type.Pchar> rawLiteral = new ArrayList<>();
         boolean hasClosed = false;
 
         while (!cursor.isEnd()) {
@@ -381,6 +388,7 @@ public class Scanner {
                 else {
                     cursor.advance();
                     word.append("`");
+                    rawLiteral.add(cursor.prev());
                     nestedCommandCounter--;
                     continue;
                 }
@@ -389,10 +397,13 @@ public class Scanner {
             if (pChar.c == '$' && !pChar.isEscaped) {
                 cursor.advance();
                 word.append("$");
+                rawLiteral.add(cursor.prev());
+                rawLiteral.add(pChar);
 
                 if (!cursor.isEnd() && cursor.peek().c == '`') {
                     cursor.advance();
                     word.append("`");
+                    rawLiteral.add(cursor.prev());
                     nestedCommandCounter++;
                 }
 
@@ -400,6 +411,7 @@ public class Scanner {
             }
 
             word.append(pChar);
+            rawLiteral.add(pChar);
 
             cursor.advance();
         }
@@ -408,12 +420,13 @@ public class Scanner {
             throw new YsharpException(YsharpException.YsharpErrorType.PROCESS, -1 ,"Unclosed backtick");
         }
 
-        this.tokens.add(new Type.Token(word.toString(), Type.TokenType.TEXT));
+        this.tokens.add(new Type.Token(word.toString(), Type.TokenType.TEXT, rawLiteral));
     }
 
     public void collectDoubleQuote() {
         List<Type.Token> tokens = new ArrayList<>();
         StringBuilder lexeme = new StringBuilder();
+        List<Type.Pchar> rawLiteral = new ArrayList<>();
         boolean hasClosed = false;
         while (!cursor.isEnd()) {
             Type.Pchar pChar = cursor.peek();
@@ -426,22 +439,27 @@ public class Scanner {
 
             if(isSpace(pChar)) {
                 if (!lexeme.isEmpty()) {
-                    tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
+                    tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT, rawLiteral));
                     lexeme.setLength(0);
+                    rawLiteral = new ArrayList<>();
                 }
 
                 // consume all blank as one token
                 while (!cursor.isEnd() && isSpace(cursor.peek())) {
-                    lexeme.append(cursor.advance().c);
+                    Type.Pchar pChar_ = cursor.peek();
+                    lexeme.append(pChar_.c);
+                    rawLiteral.add(pChar_);
+                    cursor.advance();
                 }
 
-                tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
+                tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT, rawLiteral));
                 lexeme.setLength(0);
+                rawLiteral = new ArrayList<>();
                 continue;
             }
 
             if(pChar.c == '$' && !pChar.isEscaped)  {
-                tokens.add(new Type.Token("$", Type.TokenType.DOLLAR));
+                tokens.add(new Type.Token("$", Type.TokenType.DOLLAR, List.of(new Type.Pchar('$', false))));
                 cursor.advance();
 
                 Type.TokenType type = switch (cursor.peek().c) {
@@ -452,18 +470,22 @@ public class Scanner {
                 };
 
                 if (type != null) {
-                    tokens.add(new Type.Token(String.valueOf(cursor.peek()), type));
+                    tokens.add(new Type.Token(String.valueOf(cursor.peek()), type,  List.of(cursor.peek())));
                     pChar =  cursor.advance();
 
                     // collect all variable/substitution body as atom
                     if (pChar.c == '`') {
                         while (!cursor.isEnd() && cursor.peek().c != '`') {
-                            lexeme.append(cursor.advance().c);
+                            Type.Pchar pChar_ = cursor.peek();
+                            lexeme.append(pChar_.c);
+                            rawLiteral.add(pChar_);
+                            cursor.advance();
                         }
 
                         if (!lexeme.isEmpty()) {
-                            tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
+                            tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT, rawLiteral));
                             lexeme.setLength(0);
+                            rawLiteral = new ArrayList<>();
                         }
 
                         Type.Pchar closing = cursor.advance();
@@ -473,17 +495,21 @@ public class Scanner {
                                     -1,
                                     "Unclosed backtick");
                         }
-                        tokens.add(new Type.Token(String.valueOf("`"), Type.TokenType.BACKTICK));
+                        tokens.add(new Type.Token(String.valueOf("`"), Type.TokenType.BACKTICK, List.of(new Type.Pchar('`', false))));
 
                     }
                     else if (pChar.c == '{') {
                         while (!cursor.isEnd() && cursor.peek().c != '}') {
-                            lexeme.append(cursor.advance().c);
+                            Type.Pchar pChar_ = cursor.peek();
+                            lexeme.append(pChar_.c);
+                            rawLiteral.add(pChar_);
+                            cursor.advance();
                         }
 
                         if (!lexeme.isEmpty()) {
-                            tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
+                            tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT, rawLiteral));
                             lexeme.setLength(0);
+                            rawLiteral = new ArrayList<>();
                         }
 
                         Type.Pchar closing = cursor.advance();
@@ -493,7 +519,7 @@ public class Scanner {
                                     -1,
                                     "Unclosed curly brace");
                         }
-                        tokens.add(new Type.Token(String.valueOf("}"), Type.TokenType.RIGHT_CURLY_BRACE));
+                        tokens.add(new Type.Token(String.valueOf("}"), Type.TokenType.RIGHT_CURLY_BRACE, List.of(new Type.Pchar('{',  false))));
 
                     }
 
@@ -505,12 +531,16 @@ public class Scanner {
 
             if(pChar.c == '%' && !pChar.isEscaped) {
                 while (!cursor.isEnd() && cursor.peek().c != '%') {
-                    lexeme.append(cursor.advance().c);
+                    Type.Pchar pChar_ = cursor.peek();
+                    lexeme.append(pChar_.c);
+                    rawLiteral.add(pChar_);
+                    cursor.advance();
                 }
 
                 if (!lexeme.isEmpty()) {
                     tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
                     lexeme.setLength(0);
+                    rawLiteral = new ArrayList<>();
                 }
 
                 Type.Pchar closing = cursor.advance();
@@ -520,7 +550,7 @@ public class Scanner {
                             -1,
                             "Unclosed percent");
                 }
-                tokens.add(new Type.Token(String.valueOf("%"), Type.TokenType.PERCENT));
+                tokens.add(new Type.Token(String.valueOf("%"), Type.TokenType.PERCENT, List.of(new Type.Pchar('%', false))));
 
                 continue;
             }
@@ -528,8 +558,9 @@ public class Scanner {
             if (pChar.c == '~') {
                 if (pChar.isEscaped) {
                     lexeme.append(pChar.c);
+                    rawLiteral.add(pChar);
                 } else {
-                    tokens.add(new Type.Token("~", Type.TokenType.TILDE));
+                    tokens.add(new Type.Token("~", Type.TokenType.TILDE, List.of(new Type.Pchar('~', false))));
                 }
 
                 cursor.advance();
@@ -537,12 +568,14 @@ public class Scanner {
             }
 
             lexeme.append(pChar.c);
+            rawLiteral.add(pChar);
             cursor.advance();
         }
 
         if (!lexeme.isEmpty()) {
             tokens.add(new Type.Token(lexeme.toString(), Type.TokenType.TEXT));
             lexeme.setLength(0);
+            rawLiteral = new ArrayList<>();
         }
 
         if(!hasClosed) {

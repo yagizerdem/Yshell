@@ -293,11 +293,20 @@ public class Type {
     static public class Token {
         public String lexeme;
 
+        public List<Pchar> rawLexeme;
+
         public final TokenType type;
 
         public Token(String lexeme, TokenType type) {
             this.lexeme = lexeme;
             this.type = type;
+            this.rawLexeme = new ArrayList<>();
+        }
+
+        public Token(String lexeme, TokenType type, List<Pchar> rawLexeme) {
+            this.lexeme = lexeme;
+            this.type = type;
+            this.rawLexeme = rawLexeme;
         }
     }
 
