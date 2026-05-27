@@ -38,7 +38,7 @@ public class Globber {
         Collections.sort(matches);
 
         return matches.isEmpty()
-                ? List.of(globPattern)
+                ? List.of()
                 : matches;
     }
 }

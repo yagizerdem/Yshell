@@ -2,6 +2,7 @@ package ysh;
 
 import ysharp.treewalk.YsharpException;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class Expansion {
@@ -288,7 +289,8 @@ public class Expansion {
                     node.hasGlobExpansion = true;
                     CommandResolver.WordAssemblerVisitor resolver = new CommandResolver.WordAssemblerVisitor();
                     String globPattern = node.accept(resolver);
-
+                    List<String> paths = Globber.expandGlob(globPattern);
+                    node.globExpansionResult = paths;
                 }
                 return null;
             }
@@ -330,10 +332,14 @@ public class Expansion {
         GlobSubstitutionVisitor visitor = new GlobSubstitutionVisitor();
         for(Type.Word word : command.rawArgs) {
             visitor.visitWord(word);
+            // reset flag
+            visitor.hasGlobMetaChar = false;
         }
 
         for(Type.Redirection redirection : command.redirections) {
             visitor.visitWord(redirection.filename);
+            // reset flag
+            visitor.hasGlobMetaChar = false;
         }
     }
 }

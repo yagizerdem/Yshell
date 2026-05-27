@@ -7,9 +7,12 @@ public class Main {
 
         // REPL.start();
 
-        String program = "\"echo hi{t\"";
+        String program = "echo */*.ys";
 
-        Core.ExecuteShellProgram(program);
+        // Core.ExecuteShellProgram(program);
+
+        var b = Globber.expandGlob("**/*.java");
+        var a = 10;
 
     }
 }

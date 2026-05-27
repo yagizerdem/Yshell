@@ -326,6 +326,13 @@ public class Type {
 
         public final TokenType type;
 
+        public String getRawLexemeAsString() {
+            StringBuilder builder = new StringBuilder();
+
+            rawLexeme.forEach(x -> builder.append(x.c));
+            return builder.toString();
+        }
+
         public Token(String lexeme, TokenType type) {
             this.lexeme = lexeme;
             this.type = type;
@@ -436,7 +443,7 @@ public class Type {
 
         public boolean hasGlobExpansion = false;
 
-        public String globExpansion  = null;
+        public List<String> globExpansionResult  = new ArrayList<>();
 
         public Word() {
             this.parts = new ArrayList<>();
