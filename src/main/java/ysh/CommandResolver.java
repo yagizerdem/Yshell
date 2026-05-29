@@ -144,9 +144,9 @@ public class CommandResolver {
             }
         }
 
-
-        for(int i = 0; i < command.rawArgs.size(); i++) {
-            Type.Word word = command.rawArgs.get(i);
+        List<Type.Word> rawArgs = command.getRawArgs();
+        for(int i = 0; i < rawArgs.size(); i++) {
+            Type.Word word = rawArgs.get(i);
             NormalizeWordsVisitor normalize = new NormalizeWordsVisitor();
             normalize.visitWord(word);
             List<String> args = normalize.args;
@@ -166,6 +166,5 @@ public class CommandResolver {
         this.ResolveArgs(command);
         this.ResolveIsBuiltIn(command);
     }
-
 
 }

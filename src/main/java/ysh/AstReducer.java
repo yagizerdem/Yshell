@@ -95,10 +95,10 @@ public class AstReducer  {
             for(Type.AstNode val : node.commandElements) {
                 Response response = val.accept(this);
                 if(response.word != null) {
-                    command.rawArgs.add(response.word);
+                    command.rawCommandElements.add(response.word);
                 }
                 else if(response.redirection != null) {
-                    command.redirections.add(response.redirection);
+                    command.rawCommandElements.add(response.redirection);
                 }
             }
             result.command = command;
