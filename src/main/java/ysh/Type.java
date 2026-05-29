@@ -25,29 +25,48 @@ public class Type {
 
     static public class Command implements BaseCommand {
 
-        public List<Word> rawArgs;
+        public List<CommandElement> rawCommandElements;
         public List<String> args = new ArrayList<>(); // first one is exe name or built in , other params should be command line arguments
 
-        public List<Redirection> redirections = new ArrayList<>();
+        public List<Word> getRawArgs() {
+            List<Word> rawArgs = new ArrayList<>();
+            for(CommandElement cmd  : rawCommandElements) {
+                if(cmd instanceof Word rawArg) {
+                    rawArgs.add(rawArg);
+                }
+            }
+            return rawArgs;
+        }
+
+        public List<Redirection> getRawRedirections() {
+            List<Redirection> rawRedirections = new ArrayList<>();
+            for(CommandElement cmd  : rawCommandElements) {
+                if(cmd instanceof Redirection rawRedirection) {
+                    rawRedirections.add(rawRedirection);
+                }
+            }
+            return rawRedirections;
+        }
+
         public boolean isBuiltIn;
 
         public Command() {
             this.isBuiltIn = false;
-            this.rawArgs = new ArrayList<>();
+            this.rawCommandElements = new ArrayList<>();
         }
 
-        public Command(List<Word> rawArgs) {
-            this.rawArgs = rawArgs;
+        public Command(List<CommandElement> rawCommandElements) {
+            this.rawCommandElements = rawCommandElements;
             this.isBuiltIn = false;
         }
 
-        public Command(List<Word> rawArgs, boolean isBuiltIn) {
-            this.rawArgs = rawArgs;
+        public Command(List<CommandElement> rawCommandElements, boolean isBuiltIn) {
+            this.rawCommandElements = rawCommandElements;
             this.isBuiltIn = isBuiltIn;
         }
 
-        public Command(List<Word> rawArgs, List<String> args) {
-            this.rawArgs = rawArgs;
+        public Command(List<CommandElement> rawCommandElements, List<String> args) {
+            this.rawCommandElements = rawCommandElements;
             this.args = args;
         }
 
@@ -83,6 +102,7 @@ public class Type {
         public void resolve(CommandResolver resolver) {
             resolver.Resolve(this);
         }
+
     }
 
     static public class Pipe implements BaseCommand {
@@ -434,7 +454,7 @@ public class Type {
         }
     }
 
-    static interface CommandElement {}
+    public static interface CommandElement {}
 
     public static final class Word implements AstNode, CommandElement {
         public List<WordPart> parts;

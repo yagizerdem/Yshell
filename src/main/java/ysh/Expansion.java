@@ -78,11 +78,11 @@ public class Expansion {
 
 
         VariableSubstitutionVisitor visitor = new VariableSubstitutionVisitor();
-        for(Type.Word word : command.rawArgs) {
+        for(Type.Word word : command.getRawArgs()) {
             visitor.visitWord(word);
         }
 
-        for(Type.Redirection redirection : command.redirections) {
+        for(Type.Redirection redirection : command.getRawRedirections()) {
             visitor.visitWord(redirection.filename);
         }
     }
@@ -155,11 +155,11 @@ public class Expansion {
 
 
         VariableSubstitutionVisitor visitor = new VariableSubstitutionVisitor();
-        for(Type.Word word : command.rawArgs) {
+        for(Type.Word word : command.getRawArgs()) {
             visitor.visitWord(word);
         }
 
-        for(Type.Redirection redirection : command.redirections) {
+        for(Type.Redirection redirection : command.getRawRedirections()) {
             visitor.visitWord(redirection.filename);
         }
     }
@@ -239,11 +239,11 @@ public class Expansion {
 
 
         CommandSubstitutionVisitor visitor = new CommandSubstitutionVisitor();
-        for(Type.Word word : command.rawArgs) {
+        for(Type.Word word : command.getRawArgs()) {
             visitor.visitWord(word);
         }
 
-        for(Type.Redirection redirection : command.redirections) {
+        for(Type.Redirection redirection : command.getRawRedirections()) {
             visitor.visitWord(redirection.filename);
         }
     }
@@ -330,13 +330,13 @@ public class Expansion {
 
 
         GlobSubstitutionVisitor visitor = new GlobSubstitutionVisitor();
-        for(Type.Word word : command.rawArgs) {
+        for(Type.Word word : command.getRawArgs()) {
             visitor.visitWord(word);
             // reset flag
             visitor.hasGlobMetaChar = false;
         }
 
-        for(Type.Redirection redirection : command.redirections) {
+        for(Type.Redirection redirection : command.getRawRedirections()) {
             visitor.visitWord(redirection.filename);
             // reset flag
             visitor.hasGlobMetaChar = false;

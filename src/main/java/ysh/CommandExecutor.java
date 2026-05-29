@@ -2,13 +2,8 @@ package ysh;
 
 
 import ysh.builtin.*;
-import ysharp.treewalk.YsharpException;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.List;
 

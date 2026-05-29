@@ -48,4 +48,8 @@ public class Preprocess {
     public static List<Type.Pchar> preprocess(String program) {
         return  removeComments(removeEscape(program));
     }
+
+//    public static String YsharpAdaptor(String program) {
+//
+//    }
 }
