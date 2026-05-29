@@ -8,9 +8,8 @@ public class Main {
         String program = """
                 for var i = 0; i < 10; i++ do
                     println i;
-                    run("set a='\t' & echo **/*.java & echo 'test' ; echo \\"mother    fucker\\" ");
+                    run(\"""set a='\t' & echo **/*.java & echo 'test \n' ; echo "test \n test" \""");
                 end
-                
                 """;
 
         Core.ExecuteYsharp(program);
